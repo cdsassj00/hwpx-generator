@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HWPX AI 문서 생성기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; background: #f0f4f8; color: #1a202c; min-height: 100vh; }
+.container { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
+
+/* 헤더 */
+.header { text-align: center; margin-bottom: 36px; }
+.header h1 { font-size: 32px; font-weight: 800; color: #003366; }
+.header p { color: #64748b; font-size: 15px; margin-top: 6px; }
+
+/* 탭 */
+.tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 2px solid #e2e8f0; }
+.tab { padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: none; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab:hover { color: #003366; }
+.tab.active { color: #003366; border-bottom-color: #003366; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* 카드 */
+.card { background: #fff; border-radius: 12px; padding: 24px; margin-top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size: 17px; color: #003366; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 2px solid #DFEAF5; }
+
+label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 4px; margin-top: 10px; }
+input[type="text"], input[type="password"], input[type="number"], input[type="color"], select, textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; font-family: inherit; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: #003366; box-shadow: 0 0 0 3px rgba(0,51,102,0.1); }
+textarea { resize: vertical; min-height: 100px; }
+input[type="color"] { padding: 4px; height: 40px; cursor: pointer; }
+
+.row { display: flex; gap: 12px; align-items: end; }
+.row > * { flex: 1; }
+.row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+/* 버튼 */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: #003366; color: #fff; font-size: 16px; padding: 14px 32px; }
+.btn-primary:hover { background: #004488; transform: translateY(-1px); }
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+.btn-secondary { background: #e2e8f0; color: #475569; font-size: 13px; }
+.btn-secondary:hover { background: #cbd5e1; }
+.btn-reset { background: #fef3c7; color: #92400e; font-size: 12px; padding: 6px 12px; }
+.btn-download { background: #16a34a; color: #fff; font-size: 16px; padding: 14px 32px; }
+.btn-download:hover { background: #15803d; transform: translateY(-1px); }
+.btn-download:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+.generate-row { text-align: center; margin-top: 28px; }
+
+/* AI 채팅 */
+.chat-area { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; min-height: 260px; max-height: 480px; overflow-y: auto; padding: 16px; margin-bottom: 16px; }
+.chat-msg { margin-bottom: 12px; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; max-width: 85%; white-space: pre-wrap; word-break: break-word; }
+.chat-user { background: #003366; color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
+.chat-ai { background: #fff; color: #1a202c; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
+.chat-system { background: #fef3c7; color: #92400e; font-size: 12px; text-align: center; max-width: 100%; border-radius: 8px; }
+
+.input-row { display: flex; gap: 8px; }
+.input-row textarea { min-height: 80px; flex: 1; resize: vertical; }
+.input-row .btn { white-space: nowrap; align-self: end; }
+
+/* 스타일 설정 */
+.style-group { margin-bottom: 16px; }
+.style-group h3 { font-size: 14px; color: #334155; margin-bottom: 8px; }
+.color-row { display: flex; gap: 12px; align-items: center; }
+.color-row input[type="color"] { width: 48px; flex-shrink: 0; }
+.color-row span { font-size: 12px; color: #64748b; min-width: 60px; }
+
+.range-row { display: flex; gap: 12px; align-items: center; margin-top: 6px; }
+.range-row label { margin: 0; min-width: 80px; font-size: 12px; }
+.range-row input[type="range"] { flex: 1; }
+.range-row .val { font-size: 12px; color: #64748b; min-width: 50px; text-align: right; }
+
+/* API 키 */
+.api-key-row { display: flex; gap: 8px; align-items: end; }
+.api-key-row input { flex: 1; }
+.api-key-status { font-size: 12px; margin-top: 4px; }
+.api-key-status.ok { color: #16a34a; }
+.api-key-status.err { color: #dc2626; }
+
+/* 상태 */
+#status { text-align: center; margin-top: 12px; font-size: 14px; font-weight: 600; display: none; }
+
+.preview-colors { display: flex; gap: 4px; margin-top: 8px; }
+.preview-swatch { width: 60px; height: 30px; border-radius: 6px; border: 1px solid #e2e8f0; }
+
+/* 예시 버튼들 */
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.example-chip { background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+.example-chip:hover { background: #c7d2fe; }
+
+/* 토글 스위치 */
+.toggle-wrap { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+.toggle-wrap input { display: none; }
+.toggle-track { width: 40px; height: 22px; background: #cbd5e1; border-radius: 11px; position: relative; transition: background 0.2s; }
+.toggle-wrap input:checked + .toggle-track { background: #16a34a; }
+.toggle-track::after { content: ''; width: 18px; height: 18px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.toggle-wrap input:checked + .toggle-track::after { transform: translateX(18px); }
+.toggle-label { font-size: 13px; color: #475569; font-weight: 500; }
+
+/* 다운로드 카드 */
+.download-card { background: linear-gradient(135deg, #003366, #004488); border-radius: 12px; padding: 20px 24px; margin-top: 20px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+.download-card .info { font-size: 14px; opacity: 0.85; }
+.download-card .info strong { display: block; font-size: 16px; opacity: 1; margin-bottom: 2px; }
+
+/* 편집 가능 JSON */
+.json-edit-area { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.5; min-height: 120px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; border: none; width: 100%; resize: vertical; }
+
+@media (max-width: 640px) {
+  .row, .row-3, .row-4 { grid-template-columns: 1fr; display: flex; flex-direction: column; }
+  .download-card { flex-direction: column; gap: 12px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>HWPX AI 문서 생성기</h1>
+    <p>자연어로 문서를 설명하면 AI가 구조화하고, 한글(.hwpx) 파일로 변환합니다</p>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('ai')">AI 보고서</button>
+    <button class="tab" onclick="switchTab('style')">서식 설정</button>
+  </div>
+
+  <!-- ═══ TAB 1: AI 생성 ═══ -->
+  <div id="tab-ai" class="tab-content active">
+    <div class="card">
+      <h2>Claude API 설정</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <label class="toggle-wrap" style="margin:0">
+          <input type="checkbox" id="useServerless" onchange="toggleApiMode()" />
+          <span class="toggle-track"></span>
+          <span class="toggle-label">서버리스 모드 <span style="font-size:11px;color:#94a3b8">(Netlify 배포 시)</span></span>
+        </label>
+        <span class="api-key-status" id="apiKeyStatus"></span>
+      </div>
+      <div id="apiKeySection">
+        <label>API Key</label>
+        <div class="api-key-row">
+          <input type="password" id="apiKey" placeholder="sk-ant-api03-..." />
+          <button class="btn btn-secondary" onclick="toggleKeyVisibility()">보기</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div>
+          <label>문서 유형</label>
+          <select id="templateType" onchange="onTemplateTypeChange()">
+            <option value="report">서면보고</option>
+            <option value="press">보도자료</option>
+          </select>
+        </div>
+        <div>
+          <label>모델</label>
+          <select id="model">
+            <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (빠름)</option>
+            <option value="claude-opus-4-0-20250115">Claude Opus 4</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>내 내용 입력 <span style="font-size:12px;color:#94a3b8;font-weight:400">(선택 — 초안, 메모, 핵심 내용을 붙여넣으세요)</span></h2>
+      <textarea id="userContext" rows="8" placeholder="여기에 내가 작성한 초안, 핵심 내용, 메모, 기존 문서 텍스트 등을 붙여넣으세요.&#10;&#10;예시:&#10;- 올해 공공데이터 개방 건수 3만건 돌파&#10;- 민간 활용 사례: 스타트업 380개, 매출 270억&#10;- 향후 데이터 품질 고도화 계획 있음&#10;&#10;이 내용을 AI가 문서 구조로 정리해줍니다. 비워두면 AI가 주제만으로 생성합니다."></textarea>
+    </div>
+
+    <div class="card">
+      <h2>AI에게 문서 구조화 요청</h2>
+      <div class="chat-area" id="chatArea">
+        <div class="chat-msg chat-system">문서 주제와 요청사항을 입력하세요. 위에 붙여넣은 내용이 있으면 AI가 그 내용을 기반으로 구조화합니다.</div>
+      </div>
+      <div class="input-row">
+        <textarea id="userInput" rows="4" placeholder="예: 위 내용으로 보도자료 만들어줘. 리드문은 데이터 개방 3만건 돌파에 초점 맞춰줘."></textarea>
+        <button class="btn btn-primary" id="sendBtn" onclick="sendToAI()" style="padding:10px 20px;font-size:14px">전송</button>
+      </div>
+      <div class="example-chips"></div>
+    </div>
+
+    <!-- JSON 미리보기/편집 (AI 응답 후 표시) -->
+    <div class="card" id="jsonEditCard" style="display:none">
+      <h2>보고서 구조 편집 <span style="font-size:12px;color:#94a3b8;font-weight:400">(JSON 직접 수정 가능)</span></h2>
+      <textarea class="json-edit-area" id="jsonEditArea" spellcheck="false"></textarea>
+      <div style="margin-top:8px;font-size:12px;color:#64748b">JSON 구조를 직접 수정하면 반영됩니다. 형식이 맞지 않으면 다운로드 시 오류가 날 수 있습니다.</div>
+    </div>
+
+    <div class="download-card" id="downloadCard" style="display:none">
+      <div class="info">
+        <strong id="downloadTitle">보고서 준비 완료</strong>
+        <span id="downloadMeta"></span>
+      </div>
+      <button class="btn btn-download" id="aiGenerateBtn" onclick="generateFromAI()">HWPX 다운로드</button>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2: 서식 설정 ═══ -->
+  <div id="tab-style" class="tab-content">
+    <div class="card">
+      <h2>색상</h2>
+      <div class="preview-colors" id="colorPreview"></div>
+      <div class="row-3" style="margin-top:12px">
+        <div>
+          <label>대제목 박스</label>
+          <div class="color-row"><input type="color" id="s_navy" value="#003366" onchange="updatePreview()"><span>navy</span></div>
+        </div>
+        <div>
+          <label>제목 배경</label>
+          <div class="color-row"><input type="color" id="s_title_bg" value="#DFEAF5" onchange="updatePreview()"><span>title_bg</span></div>
+        </div>
+        <div>
+          <label>대제목 밑줄</label>
+          <div class="color-row"><input type="color" id="s_navy_line" value="#315F97" onchange="updatePreview()"><span>navy_line</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>글자 크기 (pt)</h2>
+      <p style="font-size:12px;color:#94a3b8;margin-bottom:8px">100 = 1pt. 기본 본문 15pt, 제목 20pt</p>
+      <div class="row-4">
+        <div><label>제목</label><input type="number" id="s_sz_title" value="2000" step="100" min="800"></div>
+        <div><label>대제목 번호</label><input type="number" id="s_sz_sec_num" value="1500" step="100" min="800"></div>
+        <div><label>대제목</label><input type="number" id="s_sz_sec_title" value="1600" step="100" min="800"></div>
+        <div><label>중제목(□)</label><input type="number" id="s_sz_h2" value="1600" step="100" min="800"></div>
+      </div>
+      <div class="row-4">
+        <div><label>본문</label><input type="number" id="s_sz_body" value="1500" step="100" min="800"></div>
+        <div><label>주석(※)</label><input type="number" id="s_sz_note" value="1200" step="100" min="800"></div>
+        <div><label>표 머리</label><input type="number" id="s_sz_tbl_hdr" value="1200" step="100" min="800"></div>
+        <div><label>표 본문</label><input type="number" id="s_sz_tbl_body" value="1200" step="100" min="800"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>들여쓰기 (HWPUNIT, 7200 = 1인치)</h2>
+      <div id="indentSliders"></div>
+    </div>
+
+    <div class="card">
+      <h2>줄간격 (%)</h2>
+      <div class="row-3">
+        <div><label>본문</label><input type="number" id="s_sp_body_line" value="160" step="5" min="100" max="300"></div>
+        <div><label>메타</label><input type="number" id="s_sp_meta_line" value="130" step="5" min="100" max="300"></div>
+        <div><label>□ 위 간격</label><input type="number" id="s_sp_h2_before" value="2400" step="100"></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px">
+      <button class="btn btn-reset" onclick="resetStyles()">기본값으로 초기화</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<!-- 템플릿 + 생성기 -->
+<script src="hwpx_template_browser.js"></script>
+<script src="hwpx_press_template.js"></script>
+<script src="generate_hwpx_browser.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════
+// 탭 전환
+// ═══════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector(`.tab[onclick="switchTab('${name}')"]`).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// 스타일 옵션 수집
+// ═══════════════════════════════════════════════
+function getStyleOptions() {
+  return {
+    colors: {
+      navy:      document.getElementById('s_navy').value,
+      title_bg:  document.getElementById('s_title_bg').value,
+      navy_line: document.getElementById('s_navy_line').value,
+    },
+    sizes: {
+      title:     parseInt(document.getElementById('s_sz_title').value),
+      sec_num:   parseInt(document.getElementById('s_sz_sec_num').value),
+      sec_title: parseInt(document.getElementById('s_sz_sec_title').value),
+      h2:        parseInt(document.getElementById('s_sz_h2').value),
+      body:      parseInt(document.getElementById('s_sz_body').value),
+      note:      parseInt(document.getElementById('s_sz_note').value),
+      tbl_hdr:   parseInt(document.getElementById('s_sz_tbl_hdr').value),
+      tbl_body:  parseInt(document.getElementById('s_sz_tbl_body').value),
+    },
+    indent: {
+      h2:         parseInt(document.getElementById('sl_h2').value),
+      body:       parseInt(document.getElementById('sl_body').value),
+      body_sub:   parseInt(document.getElementById('sl_body_sub').value),
+      note:       parseInt(document.getElementById('sl_note').value),
+      conclusion: parseInt(document.getElementById('sl_conclusion').value),
+      l3_heading: parseInt(document.getElementById('sl_l3_heading').value),
+    },
+    spacing: {
+      body_line:  parseInt(document.getElementById('s_sp_body_line').value),
+      meta_line:  parseInt(document.getElementById('s_sp_meta_line').value),
+      h2_before:  parseInt(document.getElementById('s_sp_h2_before').value),
+    },
+  };
+}
+
+function resetStyles() {
+  const d = HwpxGenerator.DEFAULTS;
+  document.getElementById('s_navy').value = d.colors.navy;
+  document.getElementById('s_title_bg').value = d.colors.title_bg;
+  document.getElementById('s_navy_line').value = d.colors.navy_line;
+  document.getElementById('s_sz_title').value = d.sizes.title;
+  document.getElementById('s_sz_sec_num').value = d.sizes.sec_num;
+  document.getElementById('s_sz_sec_title').value = d.sizes.sec_title;
+  document.getElementById('s_sz_h2').value = d.sizes.h2;
+  document.getElementById('s_sz_body').value = d.sizes.body;
+  document.getElementById('s_sz_note').value = d.sizes.note;
+  document.getElementById('s_sz_tbl_hdr').value = d.sizes.tbl_hdr;
+  document.getElementById('s_sz_tbl_body').value = d.sizes.tbl_body;
+  document.getElementById('s_sp_body_line').value = d.spacing.body_line;
+  document.getElementById('s_sp_meta_line').value = d.spacing.meta_line;
+  document.getElementById('s_sp_h2_before').value = d.spacing.h2_before;
+  initSliders();
+  updatePreview();
+}
+
+// 들여쓰기 슬라이더
+const INDENT_ITEMS = [
+  { id: 'h2',         label: '□ 중제목',  default: 1400 },
+  { id: 'body',       label: '○ 본문',    default: 2800 },
+  { id: 'body_sub',   label: '- 하위',    default: 4200 },
+  { id: 'note',       label: '※ 주석',    default: 2800 },
+  { id: 'conclusion', label: '⇒ 결론',    default: 2800 },
+  { id: 'l3_heading', label: '가. 소제목', default: 2800 },
+];
+
+function initSliders() {
+  const container = document.getElementById('indentSliders');
+  container.innerHTML = '';
+  for (const item of INDENT_ITEMS) {
+    const div = document.createElement('div');
+    div.className = 'range-row';
+    div.innerHTML = `
+      <label>${item.label}</label>
+      <input type="range" id="sl_${item.id}" min="0" max="8400" step="200" value="${item.default}"
+             oninput="document.getElementById('slv_${item.id}').textContent = this.value">
+      <span class="val" id="slv_${item.id}">${item.default}</span>
+    `;
+    container.appendChild(div);
+  }
+}
+
+function updatePreview() {
+  const colors = [
+    document.getElementById('s_navy').value,
+    document.getElementById('s_title_bg').value,
+    document.getElementById('s_navy_line').value,
+  ];
+  const container = document.getElementById('colorPreview');
+  container.innerHTML = colors.map(c => `<div class="preview-swatch" style="background:${c}"></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// AI (Claude API)
+// ═══════════════════════════════════════════════
+let lastAiDoc = null;
+
+function toggleApiMode() {
+  const serverless = document.getElementById('useServerless').checked;
+  document.getElementById('apiKeySection').style.display = serverless ? 'none' : 'block';
+  document.getElementById('apiKeyStatus').textContent = serverless ? '서버리스 모드' : '';
+  document.getElementById('apiKeyStatus').className = serverless ? 'api-key-status ok' : 'api-key-status';
+}
+
+// Auto-detect: if hosted on Netlify, enable serverless mode by default
+if (location.hostname.includes('netlify.app') || location.hostname.includes('netlify.com')) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('useServerless').checked = true;
+    toggleApiMode();
+  });
+}
+
+function toggleKeyVisibility() {
+  const input = document.getElementById('apiKey');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function addChatMsg(text, type) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-' + type;
+  div.textContent = text;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+// 예시 입력 (문서유형별)
+const EXAMPLES = {
+  report: [
+    { chip: 'AI 행정문서 가이드라인 보고서', text: 'AI시대 행정문서 작성 가이드라인 보고서 만들어줘. 추진배경, 주요 추진내용, 기대효과 및 향후계획 포함해서.' },
+    { chip: '디지털 전환 추진 현황', text: '디지털 전환 추진 현황 보고서. 배경, 부서별 추진 현황, 성과 분석, 향후 과제 포함.' },
+    { chip: '공공데이터 개방 계획', text: '공공데이터 개방 확대 계획 보고서. 현황 분석, 단계별 추진 전략, 기대효과 중심으로.' },
+  ],
+  press: [
+    { chip: '디지털 정부혁신 성과 발표', text: '행정안전부가 디지털 정부혁신 성과를 발표하는 보도자료 만들어줘. AI 행정서비스 도입 현황, 국민 만족도 조사 결과, 향후 확대 계획 포함.' },
+    { chip: '공공데이터 개방 확대', text: '공공데이터 개방 확대 관련 보도자료. 올해 개방 데이터 건수, 활용 사례, 민간 협업 성과 중심으로.' },
+    { chip: '전자정부 국제 수상', text: '한국 전자정부가 UN 전자정부 평가에서 1위를 달성한 보도자료. 평가 개요, 주요 성과, 향후 발전 방향 포함.' },
+  ],
+};
+
+function fillExample(idx) {
+  const type = document.getElementById('templateType').value;
+  const examples = EXAMPLES[type] || EXAMPLES.report;
+  if (examples[idx]) {
+    document.getElementById('userInput').value = examples[idx].text;
+    document.getElementById('userInput').focus();
+  }
+}
+
+function renderExampleChips() {
+  const type = document.getElementById('templateType').value;
+  const examples = EXAMPLES[type] || EXAMPLES.report;
+  const container = document.querySelector('.example-chips');
+  container.innerHTML = examples.map((ex, i) =>
+    `<span class="example-chip" onclick="fillExample(${i})">${ex.chip}</span>`
+  ).join('');
+}
+
+function onTemplateTypeChange() {
+  renderExampleChips();
+  const type = document.getElementById('templateType').value;
+  const placeholder = type === 'press'
+    ? '예: 행정안전부 디지털 정부혁신 성과 발표 보도자료 만들어줘.'
+    : '예: 디지털 전환 추진 현황 보고서 만들어줘. 배경, 추진내용, 향후계획 포함해서.';
+  document.getElementById('userInput').placeholder = placeholder;
+}
+
+const SYSTEM_PROMPTS = {
+  report: `당신은 한국 공공기관 행정보고서 구조를 생성하는 AI입니다.
+사용자의 요청을 분석하여 아래 JSON 구조로 변환하세요.
+
+반드시 아래 형식의 JSON만 출력하세요. 설명이나 마크다운 없이 순수 JSON만:
+{
+  "title": "보고서 제목 (~ 보고)",
+  "doc_type": "서면보고",
+  "dept": "부서명",
+  "author": "작성자",
+  "sections": [
+    {
+      "heading": "대제목 텍스트만",
+      "subsections": [
+        {
+          "heading": "중제목 텍스트만",
+          "paragraphs": ["본문 내용 텍스트만"]
+        }
+      ],
+      "conclusions": ["결론 텍스트만 (없으면 빈 배열)"]
+    }
+  ],
+  "contacts": [{ "dept": "부서", "name": "이름", "tel": "연락처" }]
+}
+
+중요 규칙:
+- heading, paragraphs, conclusions에 불릿 기호(○, □, ⇒, -, ※, Ⅰ, Ⅱ 등)를 절대 넣지 마세요. 순수 텍스트만 작성하세요.
+- 불릿과 번호는 시스템이 자동으로 추가합니다.
+- sections는 최소 2개 이상
+- 각 section에 subsections 최소 1개
+- paragraphs는 구체적이고 서술적인 문장으로 작성 (예: "코로나19 팬데믹 이후 비대면 행정서비스 수요 급증에 따른 디지털 전환 가속화 필요")
+- 사용자가 부서/작성자를 안 말하면 적절히 생성
+- conclusions는 해당 섹션 마지막에 핵심 결론이 있을 때만 포함
+- 사용자가 초안이나 메모, 핵심 내용을 제공하면 그 내용을 최대한 살려서 구조화하세요. 사용자의 표현과 데이터를 그대로 반영하되, 문서 형식에 맞게 정리만 하세요.
+- 사용자가 제공한 수치, 고유명사, 구체적 사실은 절대 임의로 변경하지 마세요.`,
+
+  press: `당신은 한국 공공기관 보도자료 구조를 생성하는 AI입니다.
+사용자의 요청을 분석하여 아래 JSON 구조로 변환하세요.
+
+반드시 아래 형식의 JSON만 출력하세요. 설명이나 마크다운 없이 순수 JSON만:
+{
+  "title": "보도자료 제목 (핵심 메시지를 담은 헤드라인)",
+  "subtitle": "부제목 (선택, 제목 보충 설명)",
+  "doc_type": "보도자료",
+  "dept": "담당부서명",
+  "author": "담당자명",
+  "press_time_online": "온라인 보도시점 (예: 2026. 4. 1.(화) 12:00 이후)",
+  "press_time_print": "지면 보도시점 (예: 2026. 4. 2.(수) 조간부터)",
+  "lead_lines": [
+    "리드문 1 (핵심 내용 요약, 1~3줄)",
+    "리드문 2 (보충 설명)"
+  ],
+  "policy_ref": "관련 정책/법령명 (선택, 예: 「디지털 정부혁신 추진계획」)",
+  "sections": [
+    {
+      "heading": "소제목 텍스트만",
+      "subsections": [
+        {
+          "heading": "세부 항목 텍스트만",
+          "paragraphs": ["본문 내용 텍스트만"]
+        }
+      ],
+      "conclusions": ["핵심 결론 (없으면 빈 배열)"]
+    }
+  ],
+  "contacts": [{ "dept": "담당부서", "name": "담당자", "tel": "전화번호" }],
+  "attachments": ["첨부자료명 (없으면 빈 배열)"]
+}
+
+중요 규칙:
+- heading, paragraphs, conclusions에 불릿 기호(○, □, ⇒, -, ※ 등)를 절대 넣지 마세요. 순수 텍스트만 작성하세요.
+- 불릿과 번호는 시스템이 자동으로 추가합니다.
+- 보도자료는 육하원칙(누가, 무엇을, 언제, 어디서, 왜, 어떻게)을 포함하세요.
+- lead_lines는 기사의 리드문처럼 핵심 사실을 간결하게 요약 (1~3개)
+- sections에서 □ 수준의 heading과 ○ 수준의 세부내용을 포함
+- paragraphs는 구체적이고 서술적인 문장으로 작성
+- contacts는 실제 담당자 연락처 형태로 작성
+- 사용자가 부서/작성자를 안 말하면 적절히 생성
+- 사용자가 초안이나 메모, 핵심 내용을 제공하면 그 내용을 최대한 살려서 구조화하세요. 사용자의 표현과 데이터를 그대로 반영하되, 문서 형식에 맞게 정리만 하세요.
+- 사용자가 제공한 수치, 고유명사, 구체적 사실은 절대 임의로 변경하지 마세요.`
+};
+
+// 현재 선택된 시스템 프롬프트 반환
+function getSystemPrompt() {
+  const type = document.getElementById('templateType').value;
+  return SYSTEM_PROMPTS[type] || SYSTEM_PROMPTS.report;
+}
+
+/** AI 응답에서 불릿 기호 자동 제거 */
+function stripBullets(doc) {
+  const bullets = /^[\s]*(○|□|⇒|※|[-])\s*/;
+  const nums = /^[\s]*(Ⅰ|Ⅱ|Ⅲ|Ⅳ|Ⅴ|Ⅵ|Ⅶ|Ⅷ)[.\s]*/;
+  function clean(s) { return (s || '').replace(bullets, '').replace(nums, '').trim(); }
+  if (doc.sections) {
+    for (const sec of doc.sections) {
+      sec.heading = clean(sec.heading);
+      if (sec.subsections) {
+        for (const sub of sec.subsections) {
+          sub.heading = clean(sub.heading);
+          if (sub.paragraphs) sub.paragraphs = sub.paragraphs.map(clean).filter(Boolean);
+        }
+      }
+      if (sec.conclusions) sec.conclusions = sec.conclusions.map(clean).filter(Boolean);
+      if (sec.notes) sec.notes = sec.notes.map(clean).filter(Boolean);
+    }
+  }
+  return doc;
+}
+
+async function sendToAI() {
+  const serverless = document.getElementById('useServerless').checked;
+  const apiKey = document.getElementById('apiKey').value.trim();
+
+  if (!serverless && !apiKey) {
+    document.getElementById('apiKeyStatus').textContent = 'API 키를 입력하세요';
+    document.getElementById('apiKeyStatus').className = 'api-key-status err';
+    return;
+  }
+
+  const userText = document.getElementById('userInput').value.trim();
+  if (!userText) return;
+
+  // 사용자 컨텍스트(초안/메모) 가져오기
+  const userContext = document.getElementById('userContext').value.trim();
+  let fullMessage = userText;
+  if (userContext) {
+    fullMessage = `[사용자가 제공한 내용/초안]\n${userContext}\n\n[요청사항]\n${userText}`;
+    addChatMsg(`📋 내 내용 포함하여 요청`, 'system');
+  }
+
+  addChatMsg(userText, 'user');
+  document.getElementById('userInput').value = '';
+  document.getElementById('sendBtn').disabled = true;
+
+  const loadingMsg = addChatMsg('생성 중...', 'system');
+
+  try {
+    const requestBody = {
+      model: document.getElementById('model').value,
+      max_tokens: 4096,
+      system: getSystemPrompt(),
+      messages: [{ role: 'user', content: fullMessage }],
+    };
+
+    let resp;
+    if (serverless) {
+      resp = await fetch('/.netlify/functions/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+    } else {
+      resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify(requestBody),
+      });
+    }
+
+    if (!resp.ok) {
+      const errBody = await resp.text();
+      throw new Error(`API 오류 (${resp.status}): ${errBody.substring(0, 200)}`);
+    }
+
+    const data = await resp.json();
+    const aiText = data.content[0].text;
+
+    loadingMsg.remove();
+
+    // JSON 추출
+    let jsonStr = aiText;
+    const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) jsonStr = jsonMatch[1];
+    jsonStr = jsonStr.trim();
+
+    const doc = stripBullets(JSON.parse(jsonStr));
+    // 선택된 문서 유형을 doc에 기록
+    doc._templateType = document.getElementById('templateType').value;
+    lastAiDoc = doc;
+
+    // Build full structure preview
+    const tType = doc._templateType || 'report';
+    const typeLabel = tType === 'press' ? '보도자료' : '보고서';
+    let preview = `✅ "${doc.title}" ${typeLabel} 구조가 생성되었습니다.\n\n`;
+
+    if (tType === 'press') {
+      if (doc.subtitle) preview += `부제: ${doc.subtitle}\n`;
+      if (doc.lead_lines && doc.lead_lines.length) {
+        preview += `\n리드문:\n`;
+        doc.lead_lines.forEach(l => { preview += `  · ${l.length > 70 ? l.substring(0,67)+'...' : l}\n`; });
+      }
+      preview += '\n';
+    }
+
+    const roman = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ'];
+    doc.sections.forEach((sec, si) => {
+      preview += tType === 'press' ? `□ ${sec.heading}\n` : `${roman[si] || (si+1)} ${sec.heading}\n`;
+      if (sec.subsections) {
+        sec.subsections.forEach(sub => {
+          preview += tType === 'press' ? `    ○ ${sub.heading}\n` : `    □ ${sub.heading}\n`;
+          if (sub.paragraphs) {
+            sub.paragraphs.forEach(p => {
+              const txt = p.length > 60 ? p.substring(0, 57) + '...' : p;
+              preview += `        ${tType === 'press' ? '-' : '○'} ${txt}\n`;
+            });
+          }
+        });
+      }
+      if (sec.conclusions) {
+        sec.conclusions.forEach(c => {
+          const txt = c.length > 60 ? c.substring(0, 57) + '...' : c;
+          preview += `    ⇒ ${txt}\n`;
+        });
+      }
+      preview += '\n';
+    });
+    preview += `아래에서 JSON을 수정하거나 바로 다운로드하세요.`;
+    addChatMsg(preview, 'ai');
+
+    // Show JSON editor and download card
+    const jsonEditArea = document.getElementById('jsonEditArea');
+    jsonEditArea.value = JSON.stringify(doc, null, 2);
+    document.getElementById('jsonEditCard').style.display = 'block';
+
+    const totalParagraphs = doc.sections.reduce((sum, s) => sum + (s.subsections || []).reduce((ss, sub) => ss + (sub.paragraphs || []).length, 0), 0);
+    document.getElementById('downloadTitle').textContent = doc.title;
+    document.getElementById('downloadMeta').textContent = `섹션 ${doc.sections.length}개 · 본문 ${totalParagraphs}개 문단`;
+    document.getElementById('downloadCard').style.display = 'flex';
+
+    document.getElementById('apiKeyStatus').textContent = '✅ 연결됨';
+    document.getElementById('apiKeyStatus').className = 'api-key-status ok';
+
+  } catch (e) {
+    loadingMsg.remove();
+    addChatMsg('❌ 오류: ' + e.message, 'system');
+    document.getElementById('apiKeyStatus').textContent = '❌ ' + e.message.substring(0, 80);
+    document.getElementById('apiKeyStatus').className = 'api-key-status err';
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+}
+
+async function generateFromAI() {
+  // Read from JSON editor (user may have edited it)
+  try {
+    const edited = JSON.parse(document.getElementById('jsonEditArea').value);
+    lastAiDoc = stripBullets(edited);
+  } catch (e) {
+    const statusEl = document.getElementById('status');
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = '❌ JSON 형식 오류: ' + e.message;
+    return;
+  }
+  if (!lastAiDoc) return;
+  lastAiDoc.date = HwpxGenerator.today();
+  await generateHwpx(lastAiDoc);
+}
+
+// ═══════════════════════════════════════════════
+// 공통 생성
+// ═══════════════════════════════════════════════
+async function generateHwpx(doc) {
+  const statusEl = document.getElementById('status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = '#475569';
+  statusEl.textContent = '생성 중...';
+
+  try {
+    const opts = getStyleOptions();
+    const blob = await HwpxGenerator.createGovHwpx(doc, opts);
+    const filename = (doc.title || '보고서').replace(/[/\\?%*:|"<>]/g, '') + '.hwpx';
+    HwpxGenerator.downloadBlob(blob, filename);
+    statusEl.style.color = '#16a34a';
+    statusEl.textContent = '✅ 다운로드 완료: ' + filename;
+  } catch (e) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = '❌ 오류: ' + e.message;
+    console.error(e);
+  }
+}
+
+// Enter로 전송 (Shift+Enter는 줄바꿈)
+document.getElementById('userInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendToAI();
+  }
+});
+
+// 초기화
+initSliders();
+updatePreview();
+renderExampleChips();
+</script>
+</body>
+</html>

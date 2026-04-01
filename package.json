@@ -1,0 +1,41 @@
+{
+  "name": "hwpx-generator",
+  "version": "1.0.0",
+  "description": "AI 친화 한글(.hwpx) 공공행정문서 생성기 — 서면보고, 보도자료 지원",
+  "main": "generate_hwpx_node.js",
+  "browser": "generate_hwpx_browser.js",
+  "keywords": [
+    "hwpx",
+    "한글",
+    "hancom",
+    "공공문서",
+    "행정문서",
+    "서면보고",
+    "보도자료",
+    "government",
+    "document-generator"
+  ],
+  "author": "Shin Sungjin <sjshin@cdsa.or.kr> (https://cdsa.kr)",
+  "license": "MIT",
+  "homepage": "https://cdsahwpx.netlify.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdsassj00/hwpx-generator"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.9",
+    "jszip": "^3.10.1"
+  },
+  "files": [
+    "generate_hwpx_node.js",
+    "generate_hwpx_browser.js",
+    "hwpx_template_node.js",
+    "hwpx_template_browser.js",
+    "hwpx_press_template.js",
+    "README.md"
+  ],
+  "scripts": {
+    "demo": "node -e \"require('./generate_hwpx_node.js')\"",
+    "test": "node test_example.js"
+  }
+}

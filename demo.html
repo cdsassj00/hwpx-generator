@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HWPX 공공보고서 생성기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; background: #f0f4f8; color: #1a202c; min-height: 100vh; }
+
+.container { max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+
+h1 { font-size: 28px; font-weight: 800; color: #003366; margin-bottom: 8px; }
+.subtitle { color: #64748b; margin-bottom: 32px; font-size: 14px; }
+
+.card { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card h2 { font-size: 18px; color: #003366; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #DFEAF5; }
+
+label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 4px; margin-top: 12px; }
+input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: #003366; box-shadow: 0 0 0 3px rgba(0,51,102,0.1); }
+textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+
+.row { display: flex; gap: 12px; }
+.row > * { flex: 1; }
+
+.section-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; position: relative; }
+.section-box h3 { font-size: 15px; color: #334155; margin-bottom: 12px; }
+
+.sub-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: #003366; color: #fff; font-size: 16px; padding: 14px 32px; }
+.btn-primary:hover { background: #004488; transform: translateY(-1px); }
+.btn-secondary { background: #e2e8f0; color: #475569; }
+.btn-secondary:hover { background: #cbd5e1; }
+.btn-danger { background: #fee2e2; color: #dc2626; font-size: 12px; padding: 6px 12px; }
+.btn-danger:hover { background: #fecaca; }
+.btn-small { font-size: 12px; padding: 6px 14px; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+.generate-row { text-align: center; margin-top: 24px; }
+
+.remove-btn { position: absolute; top: 8px; right: 8px; }
+
+#status { text-align: center; margin-top: 12px; font-size: 14px; color: #16a34a; font-weight: 600; display: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>HWPX 공공보고서 생성기</h1>
+  <p class="subtitle">브라우저에서 바로 한글(.hwpx) 보고서를 생성합니다. 서버 불필요.</p>
+
+  <!-- 기본 정보 -->
+  <div class="card">
+    <h2>기본 정보</h2>
+    <label>보고서 제목</label>
+    <input type="text" id="title" value="AI시대 행정문서 작성 가이드라인(안) 보고" />
+
+    <div class="row">
+      <div>
+        <label>문서 유형</label>
+        <select id="doc_type">
+          <option value="서면보고" selected>서면보고</option>
+          <option value="대면보고">대면보고</option>
+          <option value="기안">기안</option>
+        </select>
+      </div>
+      <div>
+        <label>부서</label>
+        <input type="text" id="dept" value="혁신행정담당관" />
+      </div>
+      <div>
+        <label>작성자</label>
+        <input type="text" id="author" value="박은희 사무관" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 섹션 -->
+  <div class="card">
+    <h2>본문 섹션</h2>
+    <div id="sections-container"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary btn-small" onclick="addSection()">+ 섹션 추가</button>
+    </div>
+  </div>
+
+  <!-- 담당자 -->
+  <div class="card">
+    <h2>담당자 정보</h2>
+    <div id="contacts-container"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary btn-small" onclick="addContact()">+ 담당자 추가</button>
+    </div>
+  </div>
+
+  <div class="generate-row">
+    <button class="btn btn-primary" onclick="generate()">HWPX 보고서 생성 및 다운로드</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<!-- 템플릿 + 생성기 로드 -->
+<script src="hwpx_template_browser.js"></script>
+<script src="generate_hwpx_browser.js"></script>
+
+<script>
+let sectionIdx = 0;
+let contactIdx = 0;
+
+function addSection(heading, subs) {
+  const idx = sectionIdx++;
+  const container = document.getElementById('sections-container');
+  const div = document.createElement('div');
+  div.className = 'section-box';
+  div.id = `sec-${idx}`;
+  div.innerHTML = `
+    <button class="btn btn-danger remove-btn" onclick="this.parentElement.remove()">삭제</button>
+    <h3>섹션 ${idx + 1}</h3>
+    <label>대제목 (Ⅰ, Ⅱ, …)</label>
+    <input type="text" class="sec-heading" value="${heading || ''}" placeholder="예: 추진 배경" />
+    <div class="subsections" id="subs-${idx}"></div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn btn-secondary btn-small" onclick="addSubsection(${idx})">+ 중제목 추가</button>
+    </div>
+    <label style="margin-top:12px">결론 (⇒)</label>
+    <textarea class="sec-conclusion" rows="2" placeholder="이 섹션의 결론 (없으면 비워두기)"></textarea>
+  `;
+  container.appendChild(div);
+
+  if (subs) {
+    for (const sub of subs) addSubsection(idx, sub.heading, sub.paragraphs);
+  }
+}
+
+function addSubsection(secIdx, heading, paragraphs) {
+  const subsContainer = document.getElementById(`subs-${secIdx}`);
+  const div = document.createElement('div');
+  div.className = 'sub-box';
+  div.innerHTML = `
+    <button class="btn btn-danger" style="float:right;margin:-4px -4px 4px 0" onclick="this.parentElement.remove()">삭제</button>
+    <label>중제목 (□)</label>
+    <input type="text" class="sub-heading" value="${heading || ''}" placeholder="예: 추진 필요성" />
+    <label>본문 내용 (한 줄에 하나의 ○ 항목)</label>
+    <textarea class="sub-paragraphs" rows="3" placeholder="각 줄이 ○ 항목으로 들어갑니다">${(paragraphs || []).join('\n')}</textarea>
+  `;
+  subsContainer.appendChild(div);
+}
+
+function addContact(dept, name, tel) {
+  contactIdx++;
+  const container = document.getElementById('contacts-container');
+  const div = document.createElement('div');
+  div.className = 'sub-box';
+  div.innerHTML = `
+    <button class="btn btn-danger" style="float:right;margin:-4px -4px 4px 0" onclick="this.parentElement.remove()">삭제</button>
+    <div class="row">
+      <div><label>부서</label><input type="text" class="contact-dept" value="${dept || ''}" /></div>
+      <div><label>이름</label><input type="text" class="contact-name" value="${name || ''}" /></div>
+      <div><label>연락처</label><input type="text" class="contact-tel" value="${tel || ''}" /></div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function buildDocFromForm() {
+  const doc = {
+    title: document.getElementById('title').value,
+    doc_type: document.getElementById('doc_type').value,
+    date: HwpxGenerator.today(),
+    dept: document.getElementById('dept').value,
+    author: document.getElementById('author').value,
+    sections: [],
+    contacts: [],
+  };
+
+  document.querySelectorAll('.section-box').forEach(secEl => {
+    const section = {
+      heading: secEl.querySelector('.sec-heading').value,
+      subsections: [],
+      conclusions: [],
+    };
+    const concText = secEl.querySelector('.sec-conclusion').value.trim();
+    if (concText) section.conclusions = concText.split('\n').filter(Boolean);
+
+    secEl.querySelectorAll('.sub-box').forEach(subEl => {
+      const sub = {
+        heading: subEl.querySelector('.sub-heading').value,
+        paragraphs: subEl.querySelector('.sub-paragraphs').value.split('\n').filter(l => l.trim()),
+      };
+      section.subsections.push(sub);
+    });
+    doc.sections.push(section);
+  });
+
+  document.querySelectorAll('#contacts-container .sub-box').forEach(cEl => {
+    doc.contacts.push({
+      dept: cEl.querySelector('.contact-dept').value,
+      name: cEl.querySelector('.contact-name').value,
+      tel: cEl.querySelector('.contact-tel').value,
+    });
+  });
+
+  return doc;
+}
+
+async function generate() {
+  const statusEl = document.getElementById('status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = '#475569';
+  statusEl.textContent = '생성 중...';
+
+  try {
+    const doc = buildDocFromForm();
+    const blob = await HwpxGenerator.createGovHwpx(doc);
+    const filename = (doc.title || '보고서').replace(/[/\\?%*:|"<>]/g, '') + '.hwpx';
+    HwpxGenerator.downloadBlob(blob, filename);
+    statusEl.style.color = '#16a34a';
+    statusEl.textContent = '✅ 다운로드 완료: ' + filename;
+  } catch (e) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = '❌ 오류: ' + e.message;
+    console.error(e);
+  }
+}
+
+// 초기 데모 데이터
+addSection('추진 배경', [
+  { heading: '추진 필요성', paragraphs: ['정부는 사람과 AI 모두 쉽게 읽고 작성할 수 있는 표준화된 문서 작성 가이드라인을 수립할 필요가 있음.'] },
+  { heading: '현황 분석', paragraphs: ['현행 문서 형식의 한계를 분석함.'] },
+]);
+addSection('주요 추진 내용', [
+  { heading: '가이드라인 배포 및 시범 실시', paragraphs: ['행정안전부는 AI 친화적 보고서 작성을 위해 가이드라인을 전 부서에 배포하고 시범 실시함.'] },
+]);
+addContact('혁신행정담당관', '박은희 사무관', '044-205-1473');
+</script>
+</body>
+</html>
