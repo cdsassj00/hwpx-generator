@@ -74,6 +74,11 @@ body {
 }
 .header .rule::before { left: -8px; }
 .header .rule::after { right: -8px; }
+.credit-line { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; font-family: 'Fraunces', 'Noto Serif KR', serif; }
+.credit-line strong { color: var(--clay); font-weight: 600; letter-spacing: 0.04em; }
+.credit-sub { margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.badge-edu { display: inline-block; padding: 4px 12px; background: var(--clay); color: var(--paper); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; border-radius: 2px; font-family: 'Noto Serif KR', serif; }
+.credit-tech { font-size: 11px; color: var(--ink-faint); font-style: italic; font-family: 'Fraunces', serif; letter-spacing: 0.02em; }
 
 /* ═══ 탭 ═══ */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); padding: 0 4px; }
@@ -308,6 +313,127 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
 .field-item input:focus { box-shadow: inset 0 -1px 0 var(--clay); }
 .field-empty-label { color: var(--ink-faint); font-style: italic; font-size: 11px; margin-top: 2px; }
 
+/* ═══ 사이드바 (원리 설명) ═══ */
+.guide-toggle {
+  position: fixed; bottom: 28px; right: 28px; z-index: 100;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--clay); color: #FEFBF3;
+  border: none; cursor: pointer; font-size: 22px;
+  box-shadow: 0 4px 12px rgba(168,90,64,0.35), 0 1px 2px rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
+  font-family: 'Fraunces', serif;
+}
+.guide-toggle:hover { background: var(--clay-deep); transform: translateY(-2px) scale(1.05); }
+.guide-toggle::after {
+  content: '이 프로젝트 원리';
+  position: absolute; right: 68px; top: 50%; transform: translateY(-50%);
+  background: var(--ink); color: var(--paper);
+  padding: 6px 12px; border-radius: 3px; font-size: 12px;
+  font-family: 'Fraunces', 'Noto Serif KR', serif; font-style: italic;
+  white-space: nowrap; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.guide-toggle:hover::after { opacity: 1; }
+
+.guide-panel {
+  position: fixed; top: 0; right: -620px; width: 600px; max-width: 92vw;
+  height: 100vh; background: var(--paper);
+  box-shadow: -4px 0 24px rgba(43,38,32,0.15), -1px 0 0 var(--rule);
+  z-index: 200; transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  background-image:
+    radial-gradient(circle at 85% 10%, rgba(204,120,92,0.04) 0%, transparent 40%),
+    radial-gradient(circle at 15% 90%, rgba(138,127,92,0.05) 0%, transparent 45%);
+}
+.guide-panel.open { right: 0; }
+.guide-panel-inner { padding: 48px 44px 60px; }
+.guide-close {
+  position: absolute; top: 20px; right: 24px;
+  width: 34px; height: 34px; border: 1px solid var(--rule);
+  background: transparent; border-radius: 50%; cursor: pointer;
+  font-size: 18px; color: var(--ink-muted);
+  transition: all 0.15s; font-family: serif;
+}
+.guide-close:hover { border-color: var(--clay); color: var(--clay-deep); }
+
+.guide-header { margin-bottom: 28px; border-bottom: 1px solid var(--rule); padding-bottom: 20px; }
+.guide-header::before { content: '❦'; color: var(--clay); font-size: 16px; opacity: 0.7; }
+.guide-header h2 {
+  font-family: 'Fraunces', 'Noto Serif KR', serif;
+  font-weight: 600; font-size: 28px; color: var(--ink);
+  margin: 6px 0 4px; letter-spacing: -0.01em;
+}
+.guide-header .sub {
+  font-family: 'Fraunces', serif; font-style: italic;
+  color: var(--ink-muted); font-size: 14px;
+}
+
+.guide-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 24px; }
+.guide-tab {
+  flex: 1; padding: 12px 16px; border: none; background: none; cursor: pointer;
+  font-family: 'Fraunces', 'Noto Serif KR', serif;
+  font-size: 14px; font-weight: 500; color: var(--ink-muted);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: all 0.2s;
+}
+.guide-tab:hover { color: var(--clay); }
+.guide-tab.active { color: var(--ink); border-bottom-color: var(--clay); font-weight: 600; }
+
+.guide-content { display: none; }
+.guide-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+.guide-content h3 {
+  font-family: 'Fraunces', 'Noto Serif KR', serif;
+  font-weight: 600; font-size: 19px; color: var(--ink);
+  margin: 28px 0 10px; padding-left: 14px;
+  border-left: 3px solid var(--clay);
+  line-height: 1.4;
+}
+.guide-content h3:first-child { margin-top: 0; }
+.guide-content p {
+  font-size: 14px; line-height: 1.75; color: var(--ink-soft);
+  margin-bottom: 12px;
+}
+.guide-content p .em {
+  font-family: 'Fraunces', serif; font-style: italic;
+  color: var(--clay-deep); font-weight: 500;
+}
+.guide-content code {
+  background: var(--paper-deep); color: var(--ink);
+  padding: 2px 6px; border-radius: 2px;
+  font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12.5px;
+  border: 1px solid var(--rule-soft);
+}
+.guide-content pre {
+  background: var(--ink); color: var(--paper-deep);
+  padding: 14px 16px; border-radius: 3px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px; line-height: 1.6; margin: 12px 0 18px;
+  overflow-x: auto; border-left: 3px solid var(--clay);
+}
+.guide-content ol, .guide-content ul {
+  margin: 10px 0 16px 22px; font-size: 14px; line-height: 1.75; color: var(--ink-soft);
+}
+.guide-content li { margin-bottom: 6px; }
+.guide-content a { color: var(--clay-deep); text-decoration: none; border-bottom: 1px dashed var(--clay-light); }
+.guide-content a:hover { border-bottom-style: solid; }
+
+.flow-diagram {
+  background: #FBF7EC; border: 1px solid var(--rule-soft);
+  border-radius: 3px; padding: 20px; margin: 14px 0 20px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+  line-height: 1.85; color: var(--ink-soft); white-space: pre;
+  overflow-x: auto;
+}
+
+.guide-callout {
+  background: rgba(204,120,92,0.06); border-left: 3px solid var(--clay);
+  padding: 12px 16px; border-radius: 0 3px 3px 0;
+  margin: 14px 0; font-size: 13.5px; line-height: 1.7; color: var(--ink);
+  font-family: 'Noto Serif KR', serif;
+}
+.guide-callout strong { font-family: 'Fraunces', serif; color: var(--clay-deep); }
+
 /* ═══ Responsive ═══ */
 @media (max-width: 680px) {
   .container { padding: 32px 16px 60px; }
@@ -323,15 +449,19 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
 
 <div class="container">
   <div class="header">
+    <div class="credit-line">만든사람 · <strong>한국데이터사이언티스트협회</strong></div>
     <h1>HWPX <span class="accent">&amp;</span> AI</h1>
     <div class="tagline">자연어로 묘사하면, 한글 문서가 됩니다</div>
     <div class="rule"></div>
+    <div class="credit-sub">
+      <span class="badge-edu">행정안전부 전문인재 교육용</span>
+      <span class="credit-tech">HTML + JavaScript (CDN) · HWPX 스킬 활용 사이트 개발 실습</span>
+    </div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('ai')"><span class="num">i.</span>AI 보고서</button>
+    <button class="tab active" onclick="switchTab('ai')"><span class="num">i.</span>AI 보고서 (서면보고 · 보도자료)</button>
     <button class="tab" onclick="switchTab('fill')"><span class="num">ii.</span>내 양식 채우기</button>
-    <button class="tab" onclick="switchTab('style')"><span class="num">iii.</span>서식 설정</button>
   </div>
 
   <!-- ═══ TAB 1: AI 보고서 ═══ -->
@@ -402,6 +532,59 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
       </div>
       <button class="btn btn-download" id="aiGenerateBtn" onclick="generateFromAI()">HWPX 다운로드 ↓</button>
     </div>
+
+    <details class="card" style="margin-top:20px">
+      <summary style="cursor:pointer;font-family:'Fraunces','Noto Serif KR',serif;font-size:16px;color:var(--ink);font-weight:600;padding:2px 0;list-style:none;display:flex;align-items:center;gap:10px">
+        <span style="color:var(--clay);font-style:italic;font-size:13px">§ 고급</span>
+        서식 설정 <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:400;font-size:12px;color:var(--ink-faint)">— 색상 · 글자 크기 · 들여쓰기 · 줄간격</span>
+        <span style="margin-left:auto;color:var(--ink-faint);font-size:13px">▾</span>
+      </summary>
+      <div style="margin-top:18px">
+        <div style="margin-bottom:20px">
+          <h3 style="font-family:'Fraunces',serif;font-size:14px;color:var(--ink);margin-bottom:10px;font-weight:600">색상</h3>
+          <div class="preview-colors" id="colorPreview"></div>
+          <div class="row-3" style="margin-top:12px">
+            <div><label>대제목 박스</label><div class="color-row"><input type="color" id="s_navy" value="#003366" onchange="updatePreview()"><span>navy</span></div></div>
+            <div><label>제목 배경</label><div class="color-row"><input type="color" id="s_title_bg" value="#DFEAF5" onchange="updatePreview()"><span>title_bg</span></div></div>
+            <div><label>대제목 밑줄</label><div class="color-row"><input type="color" id="s_navy_line" value="#315F97" onchange="updatePreview()"><span>navy_line</span></div></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <h3 style="font-family:'Fraunces',serif;font-size:14px;color:var(--ink);margin-bottom:10px;font-weight:600">글자 크기 <span style="font-style:italic;font-weight:400;font-size:12px;color:var(--ink-faint)">— 100 = 1pt</span></h3>
+          <div class="row-4">
+            <div><label>제목</label><input type="number" id="s_sz_title" value="2000" step="100" min="800"></div>
+            <div><label>대제목 번호</label><input type="number" id="s_sz_sec_num" value="1500" step="100" min="800"></div>
+            <div><label>대제목</label><input type="number" id="s_sz_sec_title" value="1600" step="100" min="800"></div>
+            <div><label>중제목(□)</label><input type="number" id="s_sz_h2" value="1600" step="100" min="800"></div>
+          </div>
+          <div class="row-4" style="margin-top:10px">
+            <div><label>본문</label><input type="number" id="s_sz_body" value="1500" step="100" min="800"></div>
+            <div><label>주석(※)</label><input type="number" id="s_sz_note" value="1200" step="100" min="800"></div>
+            <div><label>표 머리</label><input type="number" id="s_sz_tbl_hdr" value="1200" step="100" min="800"></div>
+            <div><label>표 본문</label><input type="number" id="s_sz_tbl_body" value="1200" step="100" min="800"></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <h3 style="font-family:'Fraunces',serif;font-size:14px;color:var(--ink);margin-bottom:10px;font-weight:600">들여쓰기 <span style="font-style:italic;font-weight:400;font-size:12px;color:var(--ink-faint)">— 7200 = 1인치</span></h3>
+          <div id="indentSliders"></div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <h3 style="font-family:'Fraunces',serif;font-size:14px;color:var(--ink);margin-bottom:10px;font-weight:600">줄간격 (%)</h3>
+          <div class="row-3">
+            <div><label>본문</label><input type="number" id="s_sp_body_line" value="160" step="5" min="100" max="300"></div>
+            <div><label>메타</label><input type="number" id="s_sp_meta_line" value="130" step="5" min="100" max="300"></div>
+            <div><label>□ 위 간격</label><input type="number" id="s_sp_h2_before" value="2400" step="100"></div>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-top:16px">
+          <button class="btn btn-ghost" onclick="resetStyles()">기본값으로 초기화</button>
+        </div>
+      </div>
+    </details>
   </div>
 
   <!-- ═══ TAB 2: 내 양식 채우기 ═══ -->
@@ -439,55 +622,201 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
     </div>
   </div>
 
-  <!-- ═══ TAB 3: 서식 설정 ═══ -->
-  <div id="tab-style" class="tab-content">
-    <div class="card">
-      <h2><span class="marker">§ 1</span>색상</h2>
-      <div class="preview-colors" id="colorPreview"></div>
-      <div class="row-3" style="margin-top:14px">
-        <div><label>대제목 박스</label><div class="color-row"><input type="color" id="s_navy" value="#003366" onchange="updatePreview()"><span>navy</span></div></div>
-        <div><label>제목 배경</label><div class="color-row"><input type="color" id="s_title_bg" value="#DFEAF5" onchange="updatePreview()"><span>title_bg</span></div></div>
-        <div><label>대제목 밑줄</label><div class="color-row"><input type="color" id="s_navy_line" value="#315F97" onchange="updatePreview()"><span>navy_line</span></div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2><span class="marker">§ 2</span>글자 크기 (pt) <span class="hint">— 100 = 1pt</span></h2>
-      <div class="row-4">
-        <div><label>제목</label><input type="number" id="s_sz_title" value="2000" step="100" min="800"></div>
-        <div><label>대제목 번호</label><input type="number" id="s_sz_sec_num" value="1500" step="100" min="800"></div>
-        <div><label>대제목</label><input type="number" id="s_sz_sec_title" value="1600" step="100" min="800"></div>
-        <div><label>중제목(□)</label><input type="number" id="s_sz_h2" value="1600" step="100" min="800"></div>
-      </div>
-      <div class="row-4" style="margin-top:12px">
-        <div><label>본문</label><input type="number" id="s_sz_body" value="1500" step="100" min="800"></div>
-        <div><label>주석(※)</label><input type="number" id="s_sz_note" value="1200" step="100" min="800"></div>
-        <div><label>표 머리</label><input type="number" id="s_sz_tbl_hdr" value="1200" step="100" min="800"></div>
-        <div><label>표 본문</label><input type="number" id="s_sz_tbl_body" value="1200" step="100" min="800"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2><span class="marker">§ 3</span>들여쓰기 <span class="hint">— 7200 = 1인치</span></h2>
-      <div id="indentSliders"></div>
-    </div>
-
-    <div class="card">
-      <h2><span class="marker">§ 4</span>줄간격 (%)</h2>
-      <div class="row-3">
-        <div><label>본문</label><input type="number" id="s_sp_body_line" value="160" step="5" min="100" max="300"></div>
-        <div><label>메타</label><input type="number" id="s_sp_meta_line" value="130" step="5" min="100" max="300"></div>
-        <div><label>□ 위 간격</label><input type="number" id="s_sp_h2_before" value="2400" step="100"></div>
-      </div>
-    </div>
-
-    <div style="text-align:center;margin-top:20px">
-      <button class="btn btn-ghost" onclick="resetStyles()">기본값으로 초기화</button>
-    </div>
-  </div>
-
   <div id="status"></div>
 </div>
+
+<!-- ═══ 원리 설명 사이드바 ═══ -->
+<button class="guide-toggle" onclick="toggleGuide()" title="이 프로젝트 원리">📖</button>
+
+<aside class="guide-panel" id="guidePanel">
+  <button class="guide-close" onclick="toggleGuide()">×</button>
+  <div class="guide-panel-inner">
+    <div class="guide-header">
+      <h2>이 프로젝트는 어떻게 작동할까?</h2>
+      <div class="sub">Claude Skill → npx → 브라우저 CDN으로 이어지는 여정</div>
+    </div>
+
+    <div class="guide-tabs">
+      <button class="guide-tab active" onclick="switchGuide('easy')">🌱 초보자 버전</button>
+      <button class="guide-tab" onclick="switchGuide('dev')">⚙ 개발자 버전</button>
+    </div>
+
+    <!-- 초보자 버전 -->
+    <div id="guide-easy" class="guide-content active">
+      <h3>1. Skill이 뭐예요?</h3>
+      <p><span class="em">Skill</span>은 Claude(AI)가 특정 작업을 잘 하도록 모아놓은 "전문 지식 꾸러미"예요. 한글 보고서를 잘 만드는 방법, 엑셀을 다루는 방법, PDF를 만드는 방법 — 각각이 하나의 스킬입니다.</p>
+      <p>예를 들어 "HWPX 파일을 정부 공문 스타일로 만들어줘" 같은 요청은 일반 AI가 잘 못합니다. 그런데 <span class="em">hwpx-gov-doc</span>이라는 스킬을 Claude에게 "장착"해주면, 그 안에 들어있는 템플릿·규칙·코드 덕분에 전문가처럼 만들어줘요.</p>
+
+      <div class="guide-callout">
+        <strong>비유</strong> — 요리사에게 "백종원 레시피북"을 건네주는 것과 같아요. 요리사는 원래도 요리를 하지만, 그 책을 보면 특정 요리를 훨씬 잘 만듭니다.
+      </div>
+
+      <h3>2. Skill은 어디서 받나요?</h3>
+      <ol>
+        <li><strong>Anthropic 공식 저장소</strong> — GitHub의 Anthropic skills 레포에 여러 스킬이 공개돼 있어요</li>
+        <li><strong>Claude Code Plugin Marketplace</strong> — Claude Code에서 플러그인 형태로 설치</li>
+        <li><strong>직접 만들기</strong> — SKILL.md 파일과 도구를 폴더로 묶으면 스킬이 됨</li>
+      </ol>
+
+      <h3>3. 이 사이트는 어떻게 만들어졌어요?</h3>
+      <p>원래 <span class="em">hwpx-gov-doc</span> 스킬은 Node.js(개발자용 프로그램)에서 돌아가는 도구였어요. 그래서 평범한 공무원이 쓰기 어려웠죠. "<strong>웹 브라우저에서 바로 쓰게 해보자</strong>"가 이 프로젝트의 목적입니다.</p>
+      <div class="flow-diagram">[1단계] 스킬 받기
+   GitHub에서 hwpx-gov-doc 스킬 다운로드
+          ↓
+[2단계] Node.js 코드 → 브라우저 코드로 변환
+   npx로 돌리던 걸 → 순수 JavaScript로 포팅
+          ↓
+[3단계] ZIP 처리 라이브러리 붙이기
+   JSZip CDN으로 브라우저에서 HWPX(=ZIP) 조작
+          ↓
+[4단계] Claude AI 연결
+   "문서 주제"를 자연어로 입력 → AI가 구조화
+          ↓
+[5단계] 최종: 버튼 하나로 HWPX 다운로드 🎉</div>
+
+      <h3>4. 이 사이트에서 할 수 있는 것</h3>
+      <ul>
+        <li><strong>AI 보고서</strong> — "디지털 전환 보고서 만들어줘" 같은 자연어 요청 → Claude가 섹션 구조 짜고 → HWPX로 자동 변환</li>
+        <li><strong>내 양식 채우기</strong> — 기존 빈 HWPX 양식(착수계·공문 등) 업로드 → 핵심 내용만 쓰면 → AI가 빈칸 자동 채워서 다운로드</li>
+      </ul>
+
+      <div class="guide-callout">
+        <strong>핵심 철학</strong> — 공무원이 이미 쓰고 있는 <em>한글(HWPX) 파일</em>을 그대로 지원해서, AI를 업무에 녹여내는 것. 새로운 것을 배우지 않아도 됩니다.
+      </div>
+    </div>
+
+    <!-- 개발자 버전 -->
+    <div id="guide-dev" class="guide-content">
+      <h3>아키텍처 개요</h3>
+      <div class="flow-diagram">┌────────────────────────────────────────────┐
+│ Browser (Static HTML + JS, no backend)     │
+│ ┌────────────┐   ┌──────────────────────┐  │
+│ │ index.html │ → │ JSZip (CDN)          │  │
+│ │ + CSS      │   │ hwpx_template_browser│  │
+│ │ + JS       │   │ hwpx_press_template  │  │
+│ └──────┬─────┘   │ generate_hwpx_browser│  │
+│        │         └──────────────────────┘  │
+│        ↓                                    │
+│ fetch('/api/chat', { stream: true })       │
+└────────│───────────────────────────────────┘
+         ↓
+┌────────────────────────────────────────────┐
+│ Netlify Edge Function (Deno, 50s limit)    │
+│  netlify/edge-functions/chat.ts            │
+│   → forwards to Anthropic API              │
+│   → pipes SSE stream back to browser       │
+└────────│───────────────────────────────────┘
+         ↓
+┌────────────────────────────────────────────┐
+│ Anthropic Messages API (stream: true)      │
+│  content_block_delta → text_delta          │
+└────────────────────────────────────────────┘</div>
+
+      <h3>1. Skill → 브라우저 포팅 과정</h3>
+      <p>원본 <code>hwpx-gov-doc</code> 스킬은 Node.js 모듈이었습니다. <code>python-docx</code>스러운 API로 HWPX ZIP 안의 XML을 조립하는 구조.</p>
+      <p>브라우저로 옮기려면 두 가지만 바꾸면 됩니다:</p>
+      <ol>
+        <li><code>fs</code> → <code>Blob</code> + <code>URL.createObjectURL</code></li>
+        <li><code>JSZip</code> (Node) → <code>JSZip</code> (CDN UMD) — 동일 API라 거의 그대로</li>
+      </ol>
+      <pre>// 원본 (Node.js)
+const fs = require('fs');
+const JSZip = require('jszip');
+const zip = new JSZip();
+zip.file('Contents/section0.xml', xml);
+fs.writeFileSync('out.hwpx', await zip.generateAsync({type:'nodebuffer'}));
+
+// 브라우저 이식
+&lt;script src="https://cdn.jsdelivr.net/npm/jszip"&gt;&lt;/script&gt;
+const zip = new JSZip();
+zip.file('Contents/section0.xml', xml);
+const blob = await zip.generateAsync({
+  type: 'blob',
+  mimeType: 'application/hwp+zip',
+  compression: 'DEFLATE'
+});
+URL.createObjectURL(blob); // 다운로드 링크 생성</pre>
+
+      <h3>2. Streaming SSE via Edge Function</h3>
+      <p>Netlify 무료 플랜의 sync function은 10초 타임아웃이라 Sonnet/Opus가 자주 504를 뱉었습니다. 해결은 <span class="em">Edge Function + SSE pass-through</span>:</p>
+      <pre>// netlify/edge-functions/chat.ts
+export default async (req: Request) =&gt; {
+  const body = await req.json();
+  const apiKey = Netlify.env.get('CLAUDE_API_KEY');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': apiKey!, 'anthropic-version': '2023-06-01',
+               'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, stream: true }),
+  });
+  return new Response(r.body, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+};</pre>
+      <p>브라우저는 <code>ReadableStream</code>을 직접 파싱:</p>
+      <pre>const reader = resp.body.getReader();
+const decoder = new TextDecoder();
+let buf = '';
+while (true) {
+  const { done, value } = await reader.read(); if (done) break;
+  buf += decoder.decode(value, { stream: true });
+  const lines = buf.split('\n'); buf = lines.pop() || '';
+  for (const line of lines) {
+    if (!line.startsWith('data: ')) continue;
+    const evt = JSON.parse(line.slice(6));
+    if (evt.type === 'content_block_delta' &amp;&amp; evt.delta?.type === 'text_delta') {
+      aiText += evt.delta.text;
+    }
+  }
+}</pre>
+
+      <h3>3. HWPX 양식 자동 채우기 (2025년 추가)</h3>
+      <p>XML의 <code>&lt;hp:t&gt;</code> 텍스트 노드를 정규식으로 추출하고, 각 노드를 4가지로 분류:</p>
+      <ul>
+        <li><code>label</code> — 한글 레이블 ("용 역 명", "상 호") → <strong>불변</strong></li>
+        <li><code>blank</code> — 순수 whitespace → 값으로 통째 교체</li>
+        <li><code>mixed</code> — 레이블+공백 혼합 (": 금             원(금         원)") → 공백 영역에만 값 삽입, 구조 보존</li>
+        <li><code>body / tab</code> — 본문·hp:tab 제어 → 불변</li>
+      </ul>
+      <p>AI에는 fillable 후보 + 인근 label context만 전달. 응답 후 서버 측 검증으로 label 노드를 건드린 fill은 거부하고, 같은 ctx의 중복 필드는 자동 복제 (e.g. 6개 서류 반복되는 상호·대표자).</p>
+
+      <h3>4. 배포 파이프라인</h3>
+      <pre>git push → GitHub (cdsassj00/hwpx-generator)
+         ↓ webhook
+Netlify (connected repo, branch: main)
+  ↓ zero-build (pure static)
+publish: . (root)
+  ↓
+https://cdsahwpx.netlify.app</pre>
+      <p>빌드 스텝 없음. 환경변수 <code>CLAUDE_API_KEY</code>만 Netlify dashboard에 등록.</p>
+
+      <h3>5. Tech Stack 한 줄 요약</h3>
+      <div class="guide-callout">
+        <strong>Frontend</strong> — Vanilla JS + JSZip (CDN) · <strong>Fonts</strong> — Fraunces + Noto Serif KR · <strong>AI</strong> — Claude Sonnet 4.5 (SSE) · <strong>Infra</strong> — Netlify Edge Functions (Deno) · <strong>Repo</strong> — <a href="https://github.com/cdsassj00/hwpx-generator" target="_blank">github.com/cdsassj00/hwpx-generator</a>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<script>
+function toggleGuide() {
+  document.getElementById('guidePanel').classList.toggle('open');
+}
+function switchGuide(name) {
+  document.querySelectorAll('.guide-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.guide-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('guide-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+// ESC 키로 닫기
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.getElementById('guidePanel').classList.remove('open');
+});
+</script>
 
 <script src="hwpx_template_browser.js"></script>
 <script src="hwpx_press_template.js"></script>
@@ -852,6 +1181,28 @@ function resetForm() {
   document.getElementById('formDownloadCard').style.display = 'none';
 }
 
+// 노드 분류: label / blank / mixed / body / tab
+function classifyNode(text) {
+  if (!text) return 'blank';
+  // Contains embedded HWPX tags (tabs, line breaks, etc.)
+  if (/<hp:/.test(text)) return 'tab';
+  // Pure whitespace → blank fillable
+  if (/^\s+$/.test(text)) return 'blank';
+  // Count non-space chars and internal whitespace runs
+  const nonSpace = text.replace(/\s/g, '');
+  const hasLongGap = /\s{3,}/.test(text);  // 3+ consecutive spaces = likely blank insertion zone
+  const hasColon = /[:：]/.test(text);
+  const korLen = (text.match(/[가-힣]/g) || []).length;
+  // Mixed: has Korean label + long whitespace gaps (e.g. ": 금     원", "○ 용역명 : ")
+  if (hasLongGap && (korLen >= 1 || hasColon || /[()（）]/.test(text))) return 'mixed';
+  // Date pattern "20  년    월     일" → mixed
+  if (/20\s+년|\d+\s+년\s+\d*\s*월/.test(text)) return 'mixed';
+  // Label-like: has Korean chars, no long gap
+  if (korLen >= 1 || /^\d+\.$/.test(text) || /^[○□◦■▪]/.test(text)) return 'label';
+  // Otherwise body text
+  return 'body';
+}
+
 async function fillFormWithAI() {
   if (!uploadedForm) { alert('먼저 HWPX 양식을 업로드하세요'); return; }
   const keywords = document.getElementById('formKeywords').value.trim();
@@ -859,47 +1210,110 @@ async function fillFormWithAI() {
   const fillBtn = document.getElementById('fillBtn');
   fillBtn.disabled = true; fillBtn.textContent = 'AI 분석 중...';
 
-  const nodes = uploadedForm.textNodes.slice(0, 200);
-  const nodeListText = nodes.map(n => `[${n.idx}] "${n.text}"`).join('\n');
+  // Categorize all nodes & build fillable candidate list with context
+  const nodes = uploadedForm.textNodes;
+  const classified = nodes.map(n => ({ ...n, kind: classifyNode(n.text) }));
 
-  const systemPrompt = `당신은 한국 공공기관 HWPX 양식을 분석하여 빈 필드를 채우는 AI입니다.
+  // Build candidate list: only blank + mixed nodes, with nearby label context
+  const candidates = [];
+  classified.forEach((n, i) => {
+    if (n.kind !== 'blank' && n.kind !== 'mixed') return;
+    // Find nearest preceding label within 3 nodes
+    let labelContext = '';
+    for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
+      if (classified[j].kind === 'label' || classified[j].kind === 'mixed') {
+        labelContext = classified[j].text.trim() + (labelContext ? ' / ' + labelContext : '');
+        if (classified[j].kind === 'label' && /[가-힣]/.test(classified[j].text)) break;
+      }
+    }
+    candidates.push({ idx: n.idx, kind: n.kind, text: n.text, context: labelContext });
+  });
 
-아래는 양식에 포함된 모든 텍스트 노드입니다. 일부는 레이블(예: "용역명:", "대표자"), 일부는 빈 값(예: "", "        "), 일부는 형식 패턴(예: "20  년    월    일", "금             원")입니다.
+  // Limit to first 150 candidates for prompt size
+  const limited = candidates.slice(0, 150);
+  const candidateListText = limited.map(c =>
+    `[${c.idx}] kind=${c.kind} ctx="${c.context || '?'}" raw=${JSON.stringify(c.text)}`
+  ).join('\n');
 
-당신의 임무:
-1. 레이블과 빈 노드를 연결하여 어떤 필드가 어떤 내용을 요구하는지 파악
-2. 사용자 핵심내용을 해석하여 적절한 값 생성
-3. 채워야 할 노드 index와 새 텍스트를 JSON 배열로 반환
+  const systemPrompt = `당신은 한국 공공기관 HWPX 양식의 빈 필드를 채우는 AI입니다.
 
-반드시 순수 JSON만 출력 (설명 없이):
-{"fills":[{"idx":숫자,"label":"필드명(추론)","value":"채울 값"}]}
+아래는 양식에서 채울 수 있는 노드들입니다. 각 노드는 kind(blank/mixed), ctx(앞쪽 레이블 맥락), raw(원본 텍스트)로 구성됩니다.
 
-규칙:
-- 레이블 노드("용역명:" 같은)는 수정 금지, 그 다음 빈 노드만 채움
-- "20  년    월    일" 형태는 "2026년 4월 15일"처럼 공백 안에 숫자만 삽입 (원본 공백 형태 유지)
-- "금             원" 형태는 "금  1억 2천만  원"처럼 공백 안에 값 삽입
-- 공백만 있는 노드("     ")는 빈 필드이니 적극적으로 채움
-- 사용자가 제공하지 않은 정보는 fills 배열에 포함하지 마세요
-- 사용자 제공 수치/고유명사는 절대 변경 금지`;
+당신의 임무: 각 노드에 들어갈 값을 생성하고, JSON으로 반환하세요.
 
-  const userMessage = `[양식의 텍스트 노드]\n${nodeListText}\n\n[사용자 핵심 내용]\n${keywords}\n\n위 양식의 빈 필드를 사용자 핵심 내용으로 채워주세요.`;
+반드시 순수 JSON만 출력 (설명·마크다운 없이):
+{"fills":[{"idx":숫자,"label":"필드명","value":"대체할 전체 텍스트"}]}
+
+===핵심 규칙===
+
+1) kind="blank" 인 노드 (예: raw="        "):
+   - 값을 생성해서 넣으세요 (공백은 무시되고 값만 들어감)
+   - value에 공백 앞뒤 padding 넣지 마세요, 그냥 값만
+
+2) kind="mixed" 인 노드 (예: raw=": 금             원(금         원)"):
+   - ★★★ 원본 구조를 반드시 보존 ★★★
+   - 레이블("금", "원", "(", ")", ":" 등)은 그대로 두고 공백 영역에만 값 삽입
+   - 올바른 예: raw=": 금             원(금         원)" → value=": 금    120,000,000    원(금  일억이천만    원)"
+   - 잘못된 예: value="120,000,000원" (구조 파괴 ❌)
+   - 올바른 예: raw="20  년    월     일" → value="2026년  4월  15일"
+   - 콜론만 있는 raw=": "는 그 뒤에 값 추가: value=": 한국정보기술"
+
+3) 중복 필드 자동 복제:
+   - 같은 ctx(예: "상 호", "대표자")가 여러 번 나오면 반드시 같은 value 사용
+   - 착수계/보안각서/공정표 등 여러 서류에 같은 회사 정보가 반복될 때 일관성 유지
+
+4) 빈약한 정보 자동 보완:
+   - 사용자가 제공하지 않은 정보는 그럴듯한 한국 공공기관 문서 샘플값으로 채우세요
+   - 예: 사용자가 "상호만" 줬으면 주소·대표자·전화·감독관 등은 그럴듯한 가상값
+   - 날짜가 없으면 2026년 최근 날짜 추정
+   - 금액이 없으면 계약 규모에 맞는 1~5억 범위
+   - 단, 사용자가 명시한 값은 절대 변경 금지
+
+5) 모든 candidates 노드에 대해 value를 반환하세요 (빈 값 금지)`;
+
+  const userMessage = `[채울 수 있는 노드 목록]\n${candidateListText}\n\n[사용자 핵심 내용]\n${keywords}\n\n위 규칙대로 각 노드의 value를 생성해주세요. mixed 노드는 반드시 원본 구조 보존, 중복 ctx는 같은 값, 빈약한 정보는 그럴듯한 샘플로 채우세요.`;
 
   try {
     const aiText = await callClaudeStreaming({
-      model: document.getElementById('model').value, max_tokens: 4096,
+      model: document.getElementById('model').value, max_tokens: 8000,
       system: systemPrompt, messages: [{ role: 'user', content: userMessage }],
     }, (txt) => { fillBtn.textContent = `분석 중... (${txt.length}자)`; });
     let jsonStr = aiText;
     const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) jsonStr = jsonMatch[1];
     const result = JSON.parse(jsonStr.trim());
-    formFields = (result.fills || []).filter(f => f.value && String(f.value).trim());
+    let fills = (result.fills || []).filter(f =>
+      typeof f.idx === 'number' && f.value !== undefined && f.value !== null);
+
+    // Safety check: reject fills that target label/body/tab nodes
+    fills = fills.filter(f => {
+      const n = classified.find(x => x.idx === f.idx);
+      return n && (n.kind === 'blank' || n.kind === 'mixed');
+    });
+
+    // Auto-propagate: if same ctx/label appears multiple times but AI filled only once
+    const byCtx = {};
+    fills.forEach(f => {
+      const cand = limited.find(c => c.idx === f.idx);
+      const key = (cand?.context || '').trim();
+      if (key && !byCtx[key]) byCtx[key] = f.value;
+    });
+    limited.forEach(c => {
+      const key = (c.context || '').trim();
+      if (!key) return;
+      const already = fills.find(f => f.idx === c.idx);
+      if (!already && byCtx[key]) {
+        fills.push({ idx: c.idx, label: key, value: byCtx[key] });
+      }
+    });
+
+    formFields = fills.filter(f => String(f.value).length > 0);
     renderFieldList();
     document.getElementById('formFieldCard').style.display = 'block';
     document.getElementById('formDownloadCard').style.display = 'flex';
     document.getElementById('formDownloadTitle').textContent = uploadedForm.fileName.replace('.hwpx', '_채움.hwpx');
-    document.getElementById('formDownloadMeta').textContent = `${formFields.length}개 필드 자동 채움 완료`;
-  } catch (e) { alert('AI 채우기 실패: ' + e.message); }
+    document.getElementById('formDownloadMeta').textContent = `${formFields.length}개 필드 자동 채움 완료 · mixed 구조 보존`;
+  } catch (e) { alert('AI 채우기 실패: ' + e.message); console.error(e); }
   fillBtn.disabled = false; fillBtn.textContent = 'AI로 필드 자동 채우기';
 }
 
