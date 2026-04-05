@@ -313,27 +313,37 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
 .field-item input:focus { box-shadow: inset 0 -1px 0 var(--clay); }
 .field-empty-label { color: var(--ink-faint); font-style: italic; font-size: 11px; margin-top: 2px; }
 
+/* ═══ 플로팅 툴바 (우측 상단) ═══ */
+.float-toolbar {
+  position: fixed; top: 20px; right: 20px; z-index: 250;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.guide-panel.open ~ .float-toolbar { right: 620px; }
+body.panel-open .float-toolbar { right: calc(min(600px, 92vw) + 20px); }
+@media (max-width: 900px) {
+  body.panel-open .float-toolbar { right: 20px; top: auto; bottom: 20px; }
+}
+.float-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 24px;
+  background: var(--paper); color: var(--ink);
+  border: 1.5px solid var(--clay); cursor: pointer;
+  font-size: 14px; font-weight: 600;
+  font-family: 'Fraunces', 'Noto Serif KR', serif;
+  box-shadow: 0 3px 10px rgba(43,38,32,0.12), 0 1px 2px rgba(0,0,0,0.06);
+  transition: all 0.18s ease;
+}
+.float-btn:hover { background: var(--clay); color: #FEFBF3; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(168,90,64,0.3); }
+.float-btn .ico { font-size: 18px; line-height: 1; }
+.float-btn .lbl { font-size: 12px; letter-spacing: 0.02em; }
+.float-btn.primary { background: var(--clay); color: #FEFBF3; border-color: var(--clay-deep); }
+.float-btn.primary:hover { background: var(--clay-deep); }
+.float-btn .api-dot { width: 7px; height: 7px; border-radius: 50%; background: #c33; display: inline-block; }
+.float-btn .api-dot.ok { background: #3a7; }
+
 /* ═══ 사이드바 (원리 설명) ═══ */
-.guide-toggle {
-  position: fixed; bottom: 28px; right: 28px; z-index: 100;
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--clay); color: #FEFBF3;
-  border: none; cursor: pointer; font-size: 22px;
-  box-shadow: 0 4px 12px rgba(168,90,64,0.35), 0 1px 2px rgba(0,0,0,0.15);
-  transition: all 0.2s ease;
-  font-family: 'Fraunces', serif;
-}
-.guide-toggle:hover { background: var(--clay-deep); transform: translateY(-2px) scale(1.05); }
-.guide-toggle::after {
-  content: '이 프로젝트 원리';
-  position: absolute; right: 68px; top: 50%; transform: translateY(-50%);
-  background: var(--ink); color: var(--paper);
-  padding: 6px 12px; border-radius: 3px; font-size: 12px;
-  font-family: 'Fraunces', 'Noto Serif KR', serif; font-style: italic;
-  white-space: nowrap; opacity: 0; pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-.guide-toggle:hover::after { opacity: 1; }
+.guide-toggle { display: none; }
 
 .guide-panel {
   position: fixed; top: 0; right: -620px; width: 600px; max-width: 92vw;
@@ -346,6 +356,40 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
     radial-gradient(circle at 15% 90%, rgba(138,127,92,0.05) 0%, transparent 45%);
 }
 .guide-panel.open { right: 0; }
+
+/* ═══ 모달 (API 설정) ═══ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(43,38,32,0.5);
+  z-index: 300; display: none; align-items: flex-start; justify-content: center;
+  padding: 80px 20px 20px; overflow-y: auto;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--paper); border-radius: 6px;
+  max-width: 560px; width: 100%;
+  box-shadow: 0 20px 60px rgba(43,38,32,0.25), 0 0 0 1px var(--rule);
+  padding: 36px 36px 30px; position: relative;
+  animation: modalIn 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+.modal-close {
+  position: absolute; top: 14px; right: 16px;
+  width: 30px; height: 30px; border: 1px solid var(--rule);
+  background: transparent; border-radius: 50%; cursor: pointer;
+  font-size: 16px; color: var(--ink-muted); transition: all 0.15s;
+}
+.modal-close:hover { border-color: var(--clay); color: var(--clay-deep); }
+.modal h3 {
+  font-family: 'Fraunces', 'Noto Serif KR', serif;
+  font-size: 22px; font-weight: 600; color: var(--ink);
+  margin-bottom: 6px; letter-spacing: -0.01em;
+}
+.modal .modal-sub {
+  font-family: 'Fraunces', serif; font-style: italic;
+  color: var(--ink-faint); font-size: 13px; margin-bottom: 22px;
+  border-bottom: 1px solid var(--rule); padding-bottom: 16px;
+}
 .guide-panel-inner { padding: 48px 44px 60px; }
 .guide-close {
   position: absolute; top: 20px; right: 24px;
@@ -467,48 +511,12 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
   <!-- ═══ TAB 1: AI 보고서 ═══ -->
   <div id="tab-ai" class="tab-content active">
     <div class="card">
-      <h2><span class="marker">§ 1</span>Claude API 설정</h2>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <label class="toggle-wrap" style="margin:0">
-          <input type="checkbox" id="useServerless" onchange="toggleApiMode()" />
-          <span class="toggle-track"></span>
-          <span class="toggle-label">서버리스 모드 <span style="font-size:11px;color:var(--ink-faint);font-style:italic">(Netlify 배포 시)</span></span>
-        </label>
-        <span class="api-key-status" id="apiKeyStatus"></span>
-      </div>
-      <div id="apiKeySection">
-        <label>API Key</label>
-        <div class="api-key-row">
-          <input type="password" id="apiKey" placeholder="sk-ant-api03-..." />
-          <button class="btn btn-secondary" onclick="toggleKeyVisibility()">보기</button>
-        </div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <div>
-          <label>문서 유형</label>
-          <select id="templateType" onchange="onTemplateTypeChange()">
-            <option value="report">서면보고</option>
-            <option value="press">보도자료</option>
-          </select>
-        </div>
-        <div>
-          <label>모델</label>
-          <select id="model">
-            <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
-            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (빠름)</option>
-            <option value="claude-opus-4-5-20250929">Claude Opus 4.5</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2><span class="marker">§ 2</span>내 내용 입력 <span class="hint">— 초안 · 메모 · 핵심만</span></h2>
+      <h2><span class="marker">§ 1</span>내 내용 입력 <span class="hint">— 초안 · 메모 · 핵심만</span></h2>
       <textarea id="userContext" rows="7" placeholder="여기에 내가 작성한 초안, 핵심 내용, 메모, 기존 문서 텍스트 등을 붙여넣으세요.&#10;&#10;· 올해 공공데이터 개방 건수 3만 건 돌파&#10;· 민간 활용 사례 — 스타트업 380개, 매출 270억&#10;· 향후 데이터 품질 고도화 계획 있음&#10;&#10;비워두면 AI가 주제만으로 생성합니다."></textarea>
     </div>
 
     <div class="card">
-      <h2><span class="marker">§ 3</span>AI에게 문서 구조화 요청</h2>
+      <h2><span class="marker">§ 2</span>AI에게 문서 구조화 요청</h2>
       <div class="chat-area" id="chatArea">
         <div class="chat-msg chat-system">문서 주제와 요청사항을 입력하세요. 위에 붙여넣은 내용이 있으면 그 내용을 기반으로 구조화합니다.</div>
       </div>
@@ -520,7 +528,7 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
     </div>
 
     <div class="card" id="jsonEditCard" style="display:none">
-      <h2><span class="marker">§ 4</span>보고서 구조 편집 <span class="hint">— JSON 직접 수정</span></h2>
+      <h2><span class="marker">§ 3</span>보고서 구조 편집 <span class="hint">— JSON 직접 수정</span></h2>
       <textarea class="json-edit-area" id="jsonEditArea" spellcheck="false"></textarea>
       <div style="margin-top:10px;font-size:12px;color:var(--ink-muted);font-style:italic;font-family:'Fraunces',serif">JSON 구조를 수정하면 반영됩니다. 형식이 맞지 않으면 다운로드 시 오류가 날 수 있습니다.</div>
     </div>
@@ -625,10 +633,63 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
   <div id="status"></div>
 </div>
 
-<!-- ═══ 원리 설명 사이드바 ═══ -->
-<button class="guide-toggle" onclick="toggleGuide()" title="이 프로젝트 원리">📖</button>
+<!-- ═══ 플로팅 툴바 (우측 상단) ═══ -->
+<div class="float-toolbar">
+  <button class="float-btn primary" onclick="openSettings()" title="Claude API 설정">
+    <span class="ico">⚙</span><span class="lbl">API 설정</span><span class="api-dot" id="apiDot"></span>
+  </button>
+  <button class="float-btn" onclick="toggleGuide()" title="이 프로젝트 원리">
+    <span class="ico">📖</span><span class="lbl">원리 설명</span>
+  </button>
+</div>
 
-<aside class="guide-panel" id="guidePanel">
+<!-- ═══ 모달 (Claude API 설정) ═══ -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSettings()">×</button>
+    <h3>Claude API 설정</h3>
+    <div class="modal-sub">키 입력 · 문서 유형 · 모델 선택</div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <label class="toggle-wrap" style="margin:0">
+        <input type="checkbox" id="useServerless" onchange="toggleApiMode()" />
+        <span class="toggle-track"></span>
+        <span class="toggle-label">서버리스 모드 <span style="font-size:11px;color:var(--ink-faint);font-style:italic">(Netlify 배포 시)</span></span>
+      </label>
+      <span class="api-key-status" id="apiKeyStatus"></span>
+    </div>
+    <div id="apiKeySection">
+      <label>API Key</label>
+      <div class="api-key-row">
+        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." oninput="updateApiDot()" />
+        <button class="btn btn-secondary" onclick="toggleKeyVisibility()">보기</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div>
+        <label>문서 유형</label>
+        <select id="templateType" onchange="onTemplateTypeChange()">
+          <option value="report">서면보고</option>
+          <option value="press">보도자료</option>
+        </select>
+      </div>
+      <div>
+        <label>모델</label>
+        <select id="model">
+          <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (빠름)</option>
+          <option value="claude-opus-4-5-20250929">Claude Opus 4.5</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:22px;text-align:right">
+      <button class="btn btn-primary" onclick="closeSettings()">완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 원리 설명 사이드바 ═══ -->
+<aside class="guide-panel open" id="guidePanel">
   <button class="guide-close" onclick="toggleGuide()">×</button>
   <div class="guide-panel-inner">
     <div class="guide-header">
@@ -804,7 +865,9 @@ https://cdsahwpx.netlify.app</pre>
 
 <script>
 function toggleGuide() {
-  document.getElementById('guidePanel').classList.toggle('open');
+  const panel = document.getElementById('guidePanel');
+  panel.classList.toggle('open');
+  document.body.classList.toggle('panel-open', panel.classList.contains('open'));
 }
 function switchGuide(name) {
   document.querySelectorAll('.guide-tab').forEach(t => t.classList.remove('active'));
@@ -812,9 +875,27 @@ function switchGuide(name) {
   document.getElementById('guide-' + name).classList.add('active');
   event.currentTarget.classList.add('active');
 }
-// ESC 키로 닫기
+// API 설정 모달
+function openSettings() { document.getElementById('settingsModal').classList.add('open'); }
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); updateApiDot(); }
+function updateApiDot() {
+  const dot = document.getElementById('apiDot'); if (!dot) return;
+  const serverless = document.getElementById('useServerless')?.checked;
+  const hasKey = (document.getElementById('apiKey')?.value || '').trim().length > 10;
+  if (serverless || hasKey) dot.classList.add('ok'); else dot.classList.remove('ok');
+}
+// ESC 키로 패널/모달 닫기
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') document.getElementById('guidePanel').classList.remove('open');
+  if (e.key === 'Escape') {
+    document.getElementById('settingsModal').classList.remove('open');
+    document.getElementById('guidePanel').classList.remove('open');
+    document.body.classList.remove('panel-open');
+  }
+});
+// 페이지 로드 시 API dot 업데이트
+window.addEventListener('load', () => {
+  updateApiDot();
+  document.body.classList.add('panel-open');
 });
 </script>
 
