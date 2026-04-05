@@ -1,10 +1,15 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  edge_functions = "netlify/edge-functions"
 
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["node-fetch"]
+
+[[edge_functions]]
+  path = "/api/chat"
+  function = "chat"
 
 [[headers]]
   for = "/*"
