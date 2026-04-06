@@ -333,6 +333,7 @@ body.panel-open .float-toolbar { right: calc(min(600px, 92vw) + 20px); }
   font-family: 'Fraunces', 'Noto Serif KR', serif;
   box-shadow: 0 3px 10px rgba(43,38,32,0.12), 0 1px 2px rgba(0,0,0,0.06);
   transition: all 0.18s ease;
+  text-decoration: none;
 }
 .float-btn:hover { background: var(--clay); color: #FEFBF3; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(168,90,64,0.3); }
 .float-btn .ico { font-size: 18px; line-height: 1; }
@@ -641,6 +642,9 @@ body.panel-open .float-toolbar { right: calc(min(600px, 92vw) + 20px); }
   <button class="float-btn" onclick="toggleGuide()" title="이 프로젝트 원리">
     <span class="ico">📖</span><span class="lbl">원리 설명</span>
   </button>
+  <a class="float-btn" href="https://github.com/cdsassj00/hwpx-generator" target="_blank" rel="noopener" title="GitHub 저장소">
+    <span class="ico">🐙</span><span class="lbl">GitHub</span>
+  </a>
 </div>
 
 <!-- ═══ 모달 (Claude API 설정) ═══ -->
