@@ -243,6 +243,32 @@ input[type="color"] { padding: 3px; height: 42px; cursor: pointer; }
 .example-chip::before { content: '❧ '; color: var(--clay); font-style: normal; }
 .example-chip:hover { border-color: var(--clay); color: var(--clay-deep); background: rgba(204,120,92,0.05); }
 
+/* ═══ 양식 선택 카드 ═══ */
+.format-picker { display: flex; gap: 14px; margin-bottom: 18px; }
+.format-card {
+  flex: 1; padding: 18px 16px; border: 2px solid var(--rule);
+  border-radius: 6px; cursor: pointer; text-align: center;
+  transition: all 0.2s ease; background: var(--paper);
+}
+.format-card:hover { border-color: var(--clay-light); background: rgba(204,120,92,0.03); }
+.format-card.selected { border-color: var(--clay); background: rgba(204,120,92,0.06); box-shadow: 0 0 0 1px var(--clay); }
+.format-card .format-icon { font-size: 28px; margin-bottom: 6px; }
+.format-card .format-name { font-family: 'Fraunces','Noto Serif KR',serif; font-weight: 600; font-size: 15px; color: var(--ink); }
+.format-card .format-desc { font-size: 11px; color: var(--ink-muted); margin-top: 4px; line-height: 1.5; }
+.structure-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 6px;
+  background: var(--clay); color: #FEFBF3; font-size: 16px; font-weight: 600;
+  font-family: 'Fraunces','Noto Serif KR',serif; cursor: pointer;
+  transition: all 0.2s; letter-spacing: 0.02em;
+}
+.structure-btn:hover { background: var(--clay-deep); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(168,90,64,0.3); }
+.structure-btn:disabled { background: var(--ink-faint); cursor: not-allowed; transform: none; box-shadow: none; }
+.structure-btn .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.additional-note { margin-top: 14px; }
+.additional-note summary { cursor: pointer; font-size: 13px; color: var(--ink-muted); font-family: 'Fraunces',serif; font-style: italic; }
+.additional-note textarea { margin-top: 8px; width: 100%; }
+
 /* 토글 스위치 */
 .toggle-wrap { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
 .toggle-wrap input { display: none; }
@@ -517,15 +543,30 @@ body.panel-open .float-toolbar { right: calc(min(600px, 92vw) + 20px); }
     </div>
 
     <div class="card">
-      <h2><span class="marker">§ 2</span>AI에게 문서 구조화 요청</h2>
-      <div class="chat-area" id="chatArea">
-        <div class="chat-msg chat-system">문서 주제와 요청사항을 입력하세요. 위에 붙여넣은 내용이 있으면 그 내용을 기반으로 구조화합니다.</div>
+      <h2><span class="marker">§ 2</span>양식 선택 &amp; 구조화</h2>
+      <div class="format-picker">
+        <div class="format-card selected" onclick="selectFormat('report')" id="fmtReport">
+          <div class="format-icon">📋</div>
+          <div class="format-name">서면보고</div>
+          <div class="format-desc">Ⅰ·Ⅱ·Ⅲ 대제목 + □ 중제목<br>추진배경 · 주요내용 · 향후계획</div>
+        </div>
+        <div class="format-card" onclick="selectFormat('press')" id="fmtPress">
+          <div class="format-icon">📰</div>
+          <div class="format-name">보도자료</div>
+          <div class="format-desc">리드문 + □ 본문 섹션<br>육하원칙 · 담당자 연락처</div>
+        </div>
       </div>
-      <div class="input-row">
-        <textarea id="userInput" rows="3" placeholder="예: 위 내용으로 보도자료 만들어줘. 리드문은 3만 건 돌파에 초점 맞춰."></textarea>
-        <button class="btn btn-primary" id="sendBtn" onclick="sendToAI()">전송</button>
-      </div>
+      <button class="structure-btn" id="structureBtn" onclick="structureContent()">
+        선택한 양식으로 구조화
+      </button>
+      <details class="additional-note">
+        <summary>추가 요청사항이 있으면 펼치세요</summary>
+        <textarea id="userInput" rows="3" placeholder="예: 리드문은 3만 건 돌파에 초점 맞춰줘. 표는 2개 넣어줘."></textarea>
+      </details>
       <div class="example-chips"></div>
+      <div class="chat-area" id="chatArea" style="display:none">
+        <div class="chat-msg chat-system">구조화 진행 중…</div>
+      </div>
     </div>
 
     <div class="card" id="jsonEditCard" style="display:none">
@@ -1008,19 +1049,108 @@ function fillExample(idx) {
   if (examples[idx]) { document.getElementById('userInput').value = examples[idx].text; document.getElementById('userInput').focus(); }
 }
 
+let selectedFormat = 'report';
+
+function selectFormat(fmt) {
+  selectedFormat = fmt;
+  document.getElementById('fmtReport').classList.toggle('selected', fmt === 'report');
+  document.getElementById('fmtPress').classList.toggle('selected', fmt === 'press');
+  // 모달의 templateType도 동기화
+  document.getElementById('templateType').value = fmt;
+  renderExampleChips();
+}
+
 function renderExampleChips() {
-  const type = document.getElementById('templateType').value;
-  const examples = EXAMPLES[type] || EXAMPLES.report;
-  document.querySelector('.example-chips').innerHTML = examples.map((ex, i) =>
-    `<span class="example-chip" onclick="fillExample(${i})">${ex.chip}</span>`).join('');
+  const examples = EXAMPLES[selectedFormat] || EXAMPLES.report;
+  const chipsEl = document.querySelector('.example-chips');
+  if (chipsEl) {
+    chipsEl.innerHTML = examples.map((ex, i) =>
+      `<span class="example-chip" onclick="fillExampleAsContext(${i})">${ex.chip}</span>`).join('');
+  }
+}
+
+function fillExampleAsContext(idx) {
+  const examples = EXAMPLES[selectedFormat] || EXAMPLES.report;
+  if (examples[idx]) {
+    document.getElementById('userContext').value = examples[idx].text;
+    document.getElementById('userContext').focus();
+  }
 }
 
 function onTemplateTypeChange() {
-  renderExampleChips();
-  const type = document.getElementById('templateType').value;
-  document.getElementById('userInput').placeholder = type === 'press'
-    ? '예: 행정안전부 디지털 정부혁신 성과 발표 보도자료 만들어줘.'
-    : '예: 디지털 전환 추진 현황 보고서 만들어줘. 배경, 추진내용, 향후계획 포함해서.';
+  selectedFormat = document.getElementById('templateType').value;
+  selectFormat(selectedFormat);
+}
+
+async function structureContent() {
+  const userContext = document.getElementById('userContext').value.trim();
+  const additionalNote = (document.getElementById('userInput')?.value || '').trim();
+  if (!userContext && !additionalNote) {
+    alert('§1에 내용을 입력하거나, 추가 요청사항을 작성해 주세요.');
+    return;
+  }
+  const formatLabel = selectedFormat === 'press' ? '보도자료' : '서면보고';
+  let fullMessage = '';
+  if (userContext) fullMessage += `[사용자가 제공한 내용/초안]\n${userContext}\n\n`;
+  fullMessage += `[요청사항]\n위 내용을 "${formatLabel}" 양식으로 구조화해 주세요.`;
+  if (additionalNote) fullMessage += `\n추가 요청: ${additionalNote}`;
+
+  // 채팅 영역 표시 & 진행 상태
+  const chatArea = document.getElementById('chatArea');
+  chatArea.style.display = 'block';
+  chatArea.innerHTML = '';
+  const btn = document.getElementById('structureBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>구조화 중…';
+
+  const loadingMsg = addChatMsg('생성 중...', 'system');
+  try {
+    const aiText = await callClaudeStreaming({
+      model: document.getElementById('model').value, max_tokens: 4096,
+      system: getSystemPrompt(), messages: [{ role: 'user', content: fullMessage }],
+    }, (txt) => { loadingMsg.textContent = `생성 중... (${txt.length}자)`; });
+    loadingMsg.remove();
+    let jsonStr = aiText;
+    const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) jsonStr = jsonMatch[1];
+    const doc = stripBullets(JSON.parse(jsonStr.trim()));
+    doc._templateType = selectedFormat;
+    lastAiDoc = doc;
+    const tType = doc._templateType || 'report';
+    const typeLabel = tType === 'press' ? '보도자료' : '보고서';
+    let preview = `✅ "${doc.title}" ${typeLabel} 구조가 생성되었습니다.\n\n`;
+    if (tType === 'press') {
+      if (doc.subtitle) preview += `부제: ${doc.subtitle}\n`;
+      if (doc.lead_lines?.length) { preview += `\n리드문:\n`; doc.lead_lines.forEach(l => { preview += `  · ${l.length > 70 ? l.substring(0,67)+'...' : l}\n`; }); }
+      preview += '\n';
+    }
+    const roman = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ'];
+    doc.sections.forEach((sec, si) => {
+      preview += tType === 'press' ? `□ ${sec.heading}\n` : `${roman[si] || (si+1)} ${sec.heading}\n`;
+      if (sec.subsections) sec.subsections.forEach(sub => {
+        preview += tType === 'press' ? `    ○ ${sub.heading}\n` : `    □ ${sub.heading}\n`;
+        if (sub.paragraphs) sub.paragraphs.forEach(p => {
+          const txt = p.length > 60 ? p.substring(0, 57) + '...' : p;
+          preview += `        ${tType === 'press' ? '-' : '○'} ${txt}\n`;
+        });
+      });
+      if (sec.conclusions) sec.conclusions.forEach(c => { const txt = c.length > 60 ? c.substring(0, 57) + '...' : c; preview += `    ⇒ ${txt}\n`; });
+      preview += '\n';
+    });
+    preview += `구조를 확인하고 아래에서 다운로드하세요.`;
+    addChatMsg(preview, 'ai');
+    document.getElementById('jsonEditArea').value = JSON.stringify(doc, null, 2);
+    document.getElementById('jsonEditCard').style.display = 'block';
+    const totalParagraphs = doc.sections.reduce((sum, s) => sum + (s.subsections || []).reduce((ss, sub) => ss + (sub.paragraphs || []).length, 0), 0);
+    document.getElementById('downloadTitle').textContent = doc.title;
+    document.getElementById('downloadMeta').textContent = `섹션 ${doc.sections.length}개 · 본문 ${totalParagraphs}개 문단`;
+    document.getElementById('downloadCard').style.display = 'flex';
+  } catch (e) {
+    loadingMsg.remove();
+    addChatMsg('❌ 오류: ' + e.message, 'system');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '선택한 양식으로 구조화';
 }
 
 const SYSTEM_PROMPTS = {
@@ -1181,7 +1311,7 @@ async function generateHwpx(doc) {
 }
 
 document.getElementById('userInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToAI(); }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); structureContent(); }
 });
 
 // ═══════════════════════════════════════════════
