@@ -693,171 +693,142 @@ body.panel-open .float-toolbar { right: calc(min(600px, 92vw) + 20px); }
   <button class="guide-close" onclick="toggleGuide()">×</button>
   <div class="guide-panel-inner">
     <div class="guide-header">
-      <h2>이 프로젝트는 어떻게 작동할까?</h2>
-      <div class="sub">Claude Skill → npx → 브라우저 CDN으로 이어지는 여정</div>
+      <h2>프로젝트 소개</h2>
+      <div class="sub">이 저장소는 4가지로 구성되어 있습니다</div>
     </div>
 
     <div class="guide-tabs">
-      <button class="guide-tab active" onclick="switchGuide('easy')">🌱 초보자 버전</button>
-      <button class="guide-tab" onclick="switchGuide('dev')">⚙ 개발자 버전</button>
+      <button class="guide-tab active" onclick="switchGuide('easy')">🌱 쉬운 설명</button>
+      <button class="guide-tab" onclick="switchGuide('dev')">⚙ 개발자 상세</button>
     </div>
 
-    <!-- 초보자 버전 -->
+    <!-- 쉬운 설명 -->
     <div id="guide-easy" class="guide-content active">
-      <h3>1. Skill이 뭐예요?</h3>
-      <p><span class="em">Skill</span>은 Claude(AI)가 특정 작업을 잘 하도록 모아놓은 "전문 지식 꾸러미"예요. 한글 보고서를 잘 만드는 방법, 엑셀을 다루는 방법, PDF를 만드는 방법 — 각각이 하나의 스킬입니다.</p>
-      <p>예를 들어 "HWPX 파일을 정부 공문 스타일로 만들어줘" 같은 요청은 일반 AI가 잘 못합니다. 그런데 <span class="em">hwpx-gov-doc</span>이라는 스킬을 Claude에게 "장착"해주면, 그 안에 들어있는 템플릿·규칙·코드 덕분에 전문가처럼 만들어줘요.</p>
+      <h3>이 사이트가 뭔가요?</h3>
+      <p>공무원이 매일 쓰는 <span class="em">서면보고</span>와 <span class="em">보도자료</span>를 AI가 자동으로 만들어주는 도구예요. 주제만 입력하면 표준 번호체계(Ⅰ/□/○)가 적용된 <strong>진짜 한글 파일(.hwpx)</strong>이 나옵니다.</p>
+
+      <h3>이 저장소는 4가지로 구성돼 있어요</h3>
+
+      <div class="flow-diagram">❶ JS 라이브러리 ──── 핵심 엔진. HWPX를 만드는 코드.
+❷ JS 스킬 ────────── Claude AI가 ❶을 쓸 수 있게 해주는 설명서.
+❸ Python 스킬 ───── 같은 기능의 Python 버전. 의존성 0.
+❹ 웹 데모 ────────── ❶에 UI를 입혀서 클릭만으로 쓸 수 있게 한 것.
+                     (지금 보고 있는 이 사이트)</div>
+
+      <h3>각각 누가 쓰나요?</h3>
+      <p><strong>❶ JS 라이브러리</strong> — 개발자가 <code>npm</code>이나 <code>&lt;script&gt;</code>로 가져다 쓰는 용도<br>
+      <strong>❷ JS 스킬</strong> — Claude AI가 Node.js 환경에서 ❶을 활용하는 용도<br>
+      <strong>❸ Python 스킬</strong> — Claude AI가 Python 환경(Timely 등)에서 활용하는 용도<br>
+      <strong>❹ 웹 데모</strong> — 비개발자(공무원)가 브라우저에서 클릭만으로 문서 생성</p>
+
+      <h3>이것들이 어떻게 연결되나요?</h3>
+      <div class="flow-diagram">❶ JS 라이브러리 (핵심 코드)
+  │
+  ├──→ ❷ JS 스킬: "이걸 이렇게 써"라고 Claude에게 알려줌
+  │
+  └──→ ❹ 웹 데모: 이걸 &lt;script&gt;로 불러서 UI를 입힘
+
+❸ Python 스킬:
+  └──→ ❶과 같은 base64 템플릿을 쓰되 Python으로 독립 구현</div>
+
+      <h3>Skill(스킬)이 뭔가요?</h3>
+      <p><span class="em">Skill</span>은 Claude AI가 특정 작업을 잘 하도록 모아놓은 "전문 지식 꾸러미"예요. SKILL.md(설명서) + 코드 + 참고자료를 폴더로 묶으면 스킬이 됩니다.</p>
 
       <div class="guide-callout">
-        <strong>비유</strong> — 요리사에게 "백종원 레시피북"을 건네주는 것과 같아요. 요리사는 원래도 요리를 하지만, 그 책을 보면 특정 요리를 훨씬 잘 만듭니다.
+        <strong>비유</strong> — 요리사에게 "백종원 레시피북"을 건네주는 것. 요리사는 원래도 요리하지만, 그 책이 있으면 특정 요리를 훨씬 잘 만들어요. AI도 마찬가지.
       </div>
 
-      <h3>2. Skill은 어디서 받나요?</h3>
-      <ol>
-        <li><strong>Anthropic 공식 저장소</strong> — GitHub의 Anthropic skills 레포에 여러 스킬이 공개돼 있어요</li>
-        <li><strong>Claude Code Plugin Marketplace</strong> — Claude Code에서 플러그인 형태로 설치</li>
-        <li><strong>직접 만들기</strong> — SKILL.md 파일과 도구를 폴더로 묶으면 스킬이 됨</li>
-      </ol>
+      <p><strong>라이브러리 vs 스킬:</strong> 라이브러리(❶)는 코드 자체이고, 스킬(❷❸)은 "이 코드를 이렇게 쓰면 돼"라는 설명서예요. Claude는 설명서(스킬)를 읽고 코드(라이브러리)를 실행합니다.</p>
 
-      <h3>3. 이 사이트는 어떻게 만들어졌어요?</h3>
-      <p>원래 <span class="em">hwpx-gov-doc</span> 스킬은 Node.js(개발자용 프로그램)에서 돌아가는 도구였어요. 그래서 평범한 공무원이 쓰기 어려웠죠. "<strong>웹 브라우저에서 바로 쓰게 해보자</strong>"가 이 프로젝트의 목적입니다.</p>
-      <div class="flow-diagram">[1단계] 스킬 받기
-   GitHub에서 hwpx-gov-doc 스킬 다운로드
-          ↓
-[2단계] Node.js 코드 → 브라우저 코드로 변환
-   npx로 돌리던 걸 → 순수 JavaScript로 포팅
-          ↓
-[3단계] ZIP 처리 라이브러리 붙이기
-   JSZip CDN으로 브라우저에서 HWPX(=ZIP) 조작
-          ↓
-[4단계] Claude AI 연결
-   "문서 주제"를 자연어로 입력 → AI가 구조화
-          ↓
-[5단계] 최종: 버튼 하나로 HWPX 다운로드 🎉</div>
+      <p><strong>스킬 구하는 곳:</strong> Anthropic 공식 GitHub, Claude Code 플러그인 마켓플레이스, 또는 직접 만들기</p>
 
-      <h3>4. 이 사이트에서 할 수 있는 것</h3>
-      <ul>
-        <li><strong>AI 보고서</strong> — "디지털 전환 보고서 만들어줘" 같은 자연어 요청 → Claude가 섹션 구조 짜고 → HWPX로 자동 변환</li>
-        <li><strong>내 양식 채우기</strong> — 기존 빈 HWPX 양식(착수계·공문 등) 업로드 → 핵심 내용만 쓰면 → AI가 빈칸 자동 채워서 다운로드</li>
-      </ul>
-
-      <div class="guide-callout">
-        <strong>핵심 철학</strong> — 공무원이 이미 쓰고 있는 <em>한글(HWPX) 파일</em>을 그대로 지원해서, AI를 업무에 녹여내는 것. 새로운 것을 배우지 않아도 됩니다.
-      </div>
+      <h3>핵심: 왜 손상 없이 열릴까?</h3>
+      <p>HWPX는 ZIP 파일이에요. 안에 XML이 여러 개 들어있는데, 한컴 오피스가 까다롭게 검사하는 <code>header.xml</code>(폰트·스타일)은 <strong>실제 한컴에서 만든 원본을 base64로 인코딩해서 그대로</strong> 씁니다. 내용이 담기는 <code>section0.xml</code>만 새로 조립하니까 손상이 없어요.</p>
+      <p>❶ JS 라이브러리와 ❸ Python 스킬 모두 <strong>동일한 base64 템플릿</strong>을 공유합니다.</p>
     </div>
 
-    <!-- 개발자 버전 -->
+    <!-- 개발자 상세 -->
     <div id="guide-dev" class="guide-content">
-      <h3>아키텍처 개요</h3>
-      <div class="flow-diagram">┌────────────────────────────────────────────┐
-│ Browser (Static HTML + JS, no backend)     │
-│ ┌────────────┐   ┌──────────────────────┐  │
-│ │ index.html │ → │ JSZip (CDN)          │  │
-│ │ + CSS      │   │ hwpx_template_browser│  │
-│ │ + JS       │   │ hwpx_press_template  │  │
-│ └──────┬─────┘   │ generate_hwpx_browser│  │
-│        │         └──────────────────────┘  │
-│        ↓                                    │
-│ fetch('/api/chat', { stream: true })       │
-└────────│───────────────────────────────────┘
-         ↓
-┌────────────────────────────────────────────┐
-│ Netlify Edge Function (Deno, 50s limit)    │
-│  netlify/edge-functions/chat.ts            │
-│   → forwards to Anthropic API              │
-│   → pipes SSE stream back to browser       │
-└────────│───────────────────────────────────┘
-         ↓
-┌────────────────────────────────────────────┐
-│ Anthropic Messages API (stream: true)      │
-│  content_block_delta → text_delta          │
-└────────────────────────────────────────────┘</div>
+      <h3>파일 구조</h3>
+      <div class="flow-diagram">hwpx-generator/
+│
+├─ ❶ JS 라이브러리 (핵심 엔진)
+│  ├── generate_hwpx_browser.js  브라우저용 생성기
+│  ├── generate_hwpx_node.js     Node.js용 생성기
+│  ├── hwpx_template_browser.js  서면보고 템플릿 (base64)
+│  ├── hwpx_template_node.js     Node.js용 동일 템플릿
+│  └── hwpx_press_template.js    보도자료 템플릿 (base64)
+│
+├─ ❷ JS 스킬
+│  └── skill-js/
+│     ├── SKILL.md               Claude용 설명서 + 규칙
+│     └── references/            가이드라인 참고자료
+│
+├─ ❸ Python 스킬 (의존성 0)
+│  └── skill-python/
+│     ├── SKILL.md
+│     └── scripts/
+│        ├── generate_hwpx.py    stdlib만 사용
+│        ├── report_template.py  ❶과 동일 base64 템플릿
+│        └── press_template.py
+│
+├─ ❹ 웹 데모
+│  ├── index.html                전체 UI (이 파일)
+│  └── netlify/
+│     ├── edge-functions/chat.ts SSE 프록시 (Deno, 50s)
+│     └── functions/chat.mjs     동기 fallback (10s)
+│
+└── README.md</div>
 
-      <h3>1. Skill → 브라우저 포팅 과정</h3>
-      <p>원본 <code>hwpx-gov-doc</code> 스킬은 Node.js 모듈이었습니다. <code>python-docx</code>스러운 API로 HWPX ZIP 안의 XML을 조립하는 구조.</p>
-      <p>브라우저로 옮기려면 두 가지만 바꾸면 됩니다:</p>
-      <ol>
-        <li><code>fs</code> → <code>Blob</code> + <code>URL.createObjectURL</code></li>
-        <li><code>JSZip</code> (Node) → <code>JSZip</code> (CDN UMD) — 동일 API라 거의 그대로</li>
-      </ol>
-      <pre>// 원본 (Node.js)
+      <h3>HWPX 파일 구조</h3>
+      <div class="flow-diagram">보고서.hwpx (= ZIP)
+├── mimetype                "application/hwp+zip"
+├── Contents/
+│   ├── header.xml          ← 폰트/스타일 (템플릿 그대로)
+│   ├── section0.xml        ← 실제 내용 (이것만 새로 조립)
+│   └── content.hpf         ← 메타 (템플릿 그대로)
+├── META-INF/               ← 컨테이너 (템플릿 그대로)
+└── ...</div>
+      <p><code>header.xml</code> 등은 한컴에서 만든 원본을 base64 인코딩해서 그대로 사용. <code>section0.xml</code>만 새로 조립하므로 손상 없음.</p>
+
+      <h3>❶→❹ 포팅: Node.js → 브라우저</h3>
+      <pre>// Node.js (❶)
 const fs = require('fs');
 const JSZip = require('jszip');
-const zip = new JSZip();
-zip.file('Contents/section0.xml', xml);
 fs.writeFileSync('out.hwpx', await zip.generateAsync({type:'nodebuffer'}));
 
-// 브라우저 이식
-&lt;script src="https://cdn.jsdelivr.net/npm/jszip"&gt;&lt;/script&gt;
-const zip = new JSZip();
-zip.file('Contents/section0.xml', xml);
-const blob = await zip.generateAsync({
-  type: 'blob',
-  mimeType: 'application/hwp+zip',
-  compression: 'DEFLATE'
-});
-URL.createObjectURL(blob); // 다운로드 링크 생성</pre>
+// 브라우저 (❹)
+&lt;script src="jszip.min.js"&gt;&lt;/script&gt;
+const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
+URL.createObjectURL(blob); // → &lt;a download&gt;</pre>
 
-      <h3>2. Streaming SSE via Edge Function</h3>
-      <p>Netlify 무료 플랜의 sync function은 10초 타임아웃이라 Sonnet/Opus가 자주 504를 뱉었습니다. 해결은 <span class="em">Edge Function + SSE pass-through</span>:</p>
+      <h3>❷ JS 스킬 vs ❸ Python 스킬</h3>
+      <p><strong>JS 스킬</strong>: SKILL.md가 Claude에게 "루트의 <code>generate_hwpx_node.js</code>를 <code>require()</code>해서 써"라고 알려줌. 코드 자체는 ❶에 있음.</p>
+      <p><strong>Python 스킬</strong>: 코드를 Python으로 독립 구현. <code>pip install</code> 불필요 — <code>zipfile</code> + <code>xml.etree</code>만 사용. ❶과 동일한 base64 템플릿을 <code>.py</code> 파일에 내장.</p>
+
+      <h3>❹ 웹 데모: Edge Function SSE</h3>
+      <p>Netlify sync function 10초 타임아웃 → 504 빈발. 해결: <span class="em">Edge Function (Deno, 50초) + SSE pass-through</span></p>
       <pre>// netlify/edge-functions/chat.ts
-export default async (req: Request) =&gt; {
+export default async (req) =&gt; {
   const body = await req.json();
-  const apiKey = Netlify.env.get('CLAUDE_API_KEY');
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'x-api-key': apiKey!, 'anthropic-version': '2023-06-01',
-               'Content-Type': 'application/json' },
+    headers: { 'x-api-key': Netlify.env.get('CLAUDE_API_KEY'), ... },
     body: JSON.stringify({ ...body, stream: true }),
   });
   return new Response(r.body, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      'X-Accel-Buffering': 'no',
-    },
+    headers: { 'Content-Type': 'text/event-stream' }
   });
 };</pre>
-      <p>브라우저는 <code>ReadableStream</code>을 직접 파싱:</p>
-      <pre>const reader = resp.body.getReader();
-const decoder = new TextDecoder();
-let buf = '';
-while (true) {
-  const { done, value } = await reader.read(); if (done) break;
-  buf += decoder.decode(value, { stream: true });
-  const lines = buf.split('\n'); buf = lines.pop() || '';
-  for (const line of lines) {
-    if (!line.startsWith('data: ')) continue;
-    const evt = JSON.parse(line.slice(6));
-    if (evt.type === 'content_block_delta' &amp;&amp; evt.delta?.type === 'text_delta') {
-      aiText += evt.delta.text;
-    }
-  }
-}</pre>
 
-      <h3>3. HWPX 양식 자동 채우기 (2025년 추가)</h3>
-      <p>XML의 <code>&lt;hp:t&gt;</code> 텍스트 노드를 정규식으로 추출하고, 각 노드를 4가지로 분류:</p>
-      <ul>
-        <li><code>label</code> — 한글 레이블 ("용 역 명", "상 호") → <strong>불변</strong></li>
-        <li><code>blank</code> — 순수 whitespace → 값으로 통째 교체</li>
-        <li><code>mixed</code> — 레이블+공백 혼합 (": 금             원(금         원)") → 공백 영역에만 값 삽입, 구조 보존</li>
-        <li><code>body / tab</code> — 본문·hp:tab 제어 → 불변</li>
-      </ul>
-      <p>AI에는 fillable 후보 + 인근 label context만 전달. 응답 후 서버 측 검증으로 label 노드를 건드린 fill은 거부하고, 같은 ctx의 중복 필드는 자동 복제 (e.g. 6개 서류 반복되는 상호·대표자).</p>
+      <h3>❹ 양식 자동 채우기</h3>
+      <p><code>&lt;hp:t&gt;</code> 텍스트 노드를 분류:</p>
+      <p><code>label</code> ("용 역 명") → 불변 · <code>blank</code> (공백) → 값 교체 · <code>mixed</code> (": 금___원") → 공백에만 삽입 · <code>body/tab</code> → 불변</p>
+      <p>같은 ctx 중복 필드(6개 서류의 상호·대표자)는 자동 복제.</p>
 
-      <h3>4. 배포 파이프라인</h3>
-      <pre>git push → GitHub (cdsassj00/hwpx-generator)
-         ↓ webhook
-Netlify (connected repo, branch: main)
-  ↓ zero-build (pure static)
-publish: . (root)
-  ↓
-https://cdsahwpx.netlify.app</pre>
-      <p>빌드 스텝 없음. 환경변수 <code>CLAUDE_API_KEY</code>만 Netlify dashboard에 등록.</p>
-
-      <h3>5. Tech Stack 한 줄 요약</h3>
+      <h3>Tech Stack</h3>
       <div class="guide-callout">
-        <strong>Frontend</strong> — Vanilla JS + JSZip (CDN) · <strong>Fonts</strong> — Fraunces + Noto Serif KR · <strong>AI</strong> — Claude Sonnet 4.5 (SSE) · <strong>Infra</strong> — Netlify Edge Functions (Deno) · <strong>Repo</strong> — <a href="https://github.com/cdsassj00/hwpx-generator" target="_blank">github.com/cdsassj00/hwpx-generator</a>
+        <strong>❶ JS</strong> JSZip + DOMParser · <strong>❸ Python</strong> stdlib (zipfile + xml.etree) · <strong>❹ Design</strong> Fraunces + Noto Serif KR · <strong>❹ AI</strong> Claude Sonnet 4.5 SSE · <strong>❹ Infra</strong> Netlify Edge Functions (Deno) · <a href="https://github.com/cdsassj00/hwpx-generator" target="_blank">GitHub</a>
       </div>
     </div>
   </div>
