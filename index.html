@@ -1113,10 +1113,7 @@ async function structureContent() {
       system: getSystemPrompt(), messages: [{ role: 'user', content: fullMessage }],
     }, (txt) => { loadingMsg.textContent = `생성 중... (${txt.length}자)`; });
     loadingMsg.remove();
-    let jsonStr = aiText;
-    const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) jsonStr = jsonMatch[1];
-    const doc = stripBullets(JSON.parse(jsonStr.trim()));
+    const doc = extractJsonDoc(aiText);
     doc._templateType = selectedFormat;
     lastAiDoc = doc;
     const tType = doc._templateType || 'report';
@@ -1183,6 +1180,26 @@ function stripBullets(doc) {
     if (sec.notes) sec.notes = sec.notes.map(clean).filter(Boolean);
   }
   return doc;
+}
+
+// AI 응답에서 JSON 안전 추출 (설명 텍스트 섞여도 OK)
+function extractJsonDoc(aiText) {
+  let jsonStr = aiText;
+  // 1) ```json ... ``` 블록
+  const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) { jsonStr = jsonMatch[1]; }
+  else {
+    // 2) 첫 번째 { 부터 마지막 } 까지
+    const first = aiText.indexOf('{');
+    const last = aiText.lastIndexOf('}');
+    if (first !== -1 && last > first) { jsonStr = aiText.substring(first, last + 1); }
+  }
+  try { return stripBullets(JSON.parse(jsonStr.trim())); }
+  catch (e) {
+    // 3) JSON 안의 주석/설명 줄 제거 후 재시도
+    const cleaned = jsonStr.replace(/\/\/[^\n]*/g, '').replace(/,\s*([}\]])/g, '$1');
+    return stripBullets(JSON.parse(cleaned.trim()));
+  }
 }
 
 async function callClaudeStreaming(requestBody, onProgress) {
@@ -1454,7 +1471,7 @@ async function restructureWithAI() {
 사용자가 기존 HWPX 문서의 구조 정보와 새 내용을 제공합니다.
 당신의 임무: 기존 문서의 구조 패턴을 파악하고, 새 내용을 같은 구조로 구조화하여 JSON으로 반환하세요.
 
-반드시 순수 JSON만 출력 (설명·마크다운 없이):
+★★★ 중요: 반드시 순수 JSON만 출력하세요. 설명, 인사말, 마크다운, 코멘트 절대 금지. 첫 글자가 { 이어야 합니다. ★★★
 {"title":"문서 제목","doc_type":"서면보고","dept":"부서명","author":"작성자","date":"날짜",
  "sections":[{"heading":"대제목","subsections":[{"heading":"중제목","paragraphs":["본문"]}],"conclusions":[],"notes":[]}],
  "contacts":[{"dept":"","name":"","tel":""}],
@@ -1488,10 +1505,7 @@ ${keywords}
     }, (txt) => { loadingMsg.textContent = `구조화 중... (${txt.length}자)`; });
 
     loadingMsg.remove();
-    let jsonStr = aiText;
-    const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) jsonStr = jsonMatch[1];
-    const doc = stripBullets(JSON.parse(jsonStr.trim()));
+    const doc = extractJsonDoc(aiText);
     doc._templateType = 'report'; // 업로드된 양식 기반
     doc._useUploadedTemplate = true;
     fillDoc = doc;
