@@ -1182,24 +1182,45 @@ function stripBullets(doc) {
   return doc;
 }
 
-// AI 응답에서 JSON 안전 추출 (설명 텍스트 섞여도 OK)
+// AI 응답에서 JSON 안전 추출 (설명 텍스트·코드블록 섞여도 OK)
 function extractJsonDoc(aiText) {
-  let jsonStr = aiText;
-  // 1) ```json ... ``` 블록
-  const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch) { jsonStr = jsonMatch[1]; }
-  else {
-    // 2) 첫 번째 { 부터 마지막 } 까지
-    const first = aiText.indexOf('{');
-    const last = aiText.lastIndexOf('}');
-    if (first !== -1 && last > first) { jsonStr = aiText.substring(first, last + 1); }
+  const attempts = [];
+
+  // 1) ```json 블록 중 실제 JSON인 것 찾기 (여러 코드블록 중 정확한 것)
+  const allBlocks = [...aiText.matchAll(/```json\s*([\s\S]*?)```/g)];
+  for (const m of allBlocks) {
+    const candidate = m[1].trim();
+    if (candidate.startsWith('{')) attempts.push(candidate);
   }
-  try { return stripBullets(JSON.parse(jsonStr.trim())); }
-  catch (e) {
-    // 3) JSON 안의 주석/설명 줄 제거 후 재시도
-    const cleaned = jsonStr.replace(/\/\/[^\n]*/g, '').replace(/,\s*([}\]])/g, '$1');
-    return stripBullets(JSON.parse(cleaned.trim()));
+  // 일반 ``` 블록도
+  const allGeneric = [...aiText.matchAll(/```\s*([\s\S]*?)```/g)];
+  for (const m of allGeneric) {
+    const candidate = m[1].trim();
+    if (candidate.startsWith('{')) attempts.push(candidate);
   }
+
+  // 2) 가장 바깥쪽 { ~ } 추출 (브레이스 깊이 매칭)
+  const first = aiText.indexOf('{');
+  if (first !== -1) {
+    let depth = 0, end = -1;
+    for (let i = first; i < aiText.length; i++) {
+      if (aiText[i] === '{') depth++;
+      else if (aiText[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+    }
+    if (end > first) attempts.push(aiText.substring(first, end + 1));
+  }
+
+  // 3) 각 후보를 파싱 시도
+  for (const raw of attempts) {
+    try { return stripBullets(JSON.parse(raw)); } catch {}
+    // 주석/trailing comma 제거 후 재시도
+    try {
+      const cleaned = raw.replace(/\/\/[^\n]*/g, '').replace(/,\s*([}\]])/g, '$1');
+      return stripBullets(JSON.parse(cleaned));
+    } catch {}
+  }
+
+  throw new Error('AI 응답에서 유효한 JSON을 찾지 못했습니다. 다시 시도해 주세요.');
 }
 
 async function callClaudeStreaming(requestBody, onProgress) {
