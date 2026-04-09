@@ -532,7 +532,7 @@ body.panel-open .float-toolbar { right: calc(min(600px, 92vw) + 20px); }
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('ai')"><span class="num">i.</span>AI 보고서 (서면보고 · 보도자료)</button>
-    <button class="tab" onclick="switchTab('fill')"><span class="num">ii.</span>내 양식 채우기</button>
+    <button class="tab" onclick="switchTab('fill')"><span class="num">ii.</span>내 양식으로 새 문서</button>
   </div>
 
   <!-- ═══ TAB 1: AI 보고서 ═══ -->
@@ -637,38 +637,41 @@ body.panel-open .float-toolbar { right: calc(min(600px, 92vw) + 20px); }
     </details>
   </div>
 
-  <!-- ═══ TAB 2: 내 양식 채우기 ═══ -->
+  <!-- ═══ TAB 2: 내 양식으로 새 문서 ═══ -->
   <div id="tab-fill" class="tab-content">
     <div class="card">
-      <h2><span class="marker">§ 1</span>빈 HWPX 양식 업로드 <span class="hint">— 착수계 · 공문 · 신청서 등</span></h2>
+      <h2><span class="marker">§ 1</span>HWPX 파일 업로드 <span class="hint">— 채워져 있든 비어있든 OK</span></h2>
       <div class="dropzone" id="dropzone" onclick="document.getElementById('formFile').click()">
         <div class="dropzone-icon">📜</div>
         <div class="dropzone-title">파일을 끌어놓거나 클릭하여 선택</div>
-        <div class="dropzone-sub">제목 · 항목 레이블이 이미 있고, 값만 비어있는 .hwpx 양식</div>
+        <div class="dropzone-sub">아무 .hwpx 파일 — 서식과 구조만 벤치마킹합니다</div>
         <input type="file" id="formFile" accept=".hwpx" onchange="handleFormUpload(event)" />
       </div>
       <div id="formFileInfo" style="display:none;margin-top:14px"></div>
+      <div id="structureSummary" style="display:none;margin-top:14px;padding:14px 16px;background:rgba(204,120,92,0.05);border:1px solid var(--rule);border-radius:4px;font-size:13px;line-height:1.7;color:var(--ink-soft)"></div>
     </div>
 
     <div class="card" id="formKeyCard" style="display:none">
-      <h2><span class="marker">§ 2</span>핵심 내용 입력 <span class="hint">— 대충 써도 AI가 정제합니다</span></h2>
-      <textarea id="formKeywords" rows="7" placeholder="용역명, 상호, 주소, 대표자, 계약금액, 계약일자 등 양식에 들어갈 내용을 편하게 입력하세요.&#10;&#10;예:&#10;· 용역명 — 00사 ICT 인프라 유지보수&#10;· 회사 (주)한국정보기술, 서울 강남구 테헤란로 100&#10;· 대표 김민수, 계약금액 1억 2천만원 (VAT 별도)&#10;· 착수 2026.4.15 ~ 준공 2026.12.31&#10;· 감독관 디지털정책국 정보화팀 이영수"></textarea>
+      <h2><span class="marker">§ 2</span>새로 넣을 내용 <span class="hint">— 마구잡이로 복붙해도 됩니다</span></h2>
+      <textarea id="formKeywords" rows="8" placeholder="새 문서에 들어갈 내용을 자유롭게 입력하세요.&#10;&#10;복붙, 메모, 키워드 나열 뭐든 OK.&#10;AI가 위 양식의 구조에 맞게 구조화합니다.&#10;&#10;예:&#10;올해 공공데이터 개방 건수 3만 건 돌파&#10;민간 활용 스타트업 380개, 매출 270억&#10;데이터 품질 고도화 추진 예정"></textarea>
       <div style="text-align:center;margin-top:16px">
-        <button class="btn btn-primary" id="fillBtn" onclick="fillFormWithAI()">AI로 필드 자동 채우기</button>
+        <button class="structure-btn" id="fillBtn" onclick="restructureWithAI()">이 양식으로 새 문서 만들기</button>
       </div>
+      <div class="chat-area" id="fillChatArea" style="display:none"></div>
     </div>
 
     <div class="card" id="formFieldCard" style="display:none">
-      <h2><span class="marker">§ 3</span>필드 확인 · 편집 <span class="hint">— 수정 후 다운로드</span></h2>
-      <div id="fieldList" class="field-list"></div>
+      <h2><span class="marker">§ 3</span>구조 확인 · 편집 <span class="hint">— JSON 수정 가능</span></h2>
+      <textarea class="json-edit-area" id="fillJsonArea" spellcheck="false" rows="12"></textarea>
+      <div style="margin-top:10px;font-size:12px;color:var(--ink-muted);font-style:italic;font-family:'Fraunces',serif">구조를 수정하면 반영됩니다.</div>
     </div>
 
     <div class="download-card" id="formDownloadCard" style="display:none">
       <div class="info">
-        <strong id="formDownloadTitle">채워진 양식 준비 완료</strong>
+        <strong id="formDownloadTitle">새 문서 준비 완료</strong>
         <span id="formDownloadMeta"></span>
       </div>
-      <button class="btn btn-download" onclick="downloadFilledForm()">HWPX 다운로드 ↓</button>
+      <button class="btn btn-download" onclick="downloadRestructured()">HWPX 다운로드 ↓</button>
     </div>
   </div>
 
@@ -1318,7 +1321,7 @@ document.getElementById('userInput').addEventListener('keydown', function(e) {
 // 양식 업로드 & AI 자동 채우기
 // ═══════════════════════════════════════════════
 let uploadedForm = null;
-let formFields = [];
+let fillDoc = null; // AI가 구조화한 JSON
 
 function handleFormUpload(event) {
   const file = event.target.files[0]; if (!file) return; loadFormFile(file);
@@ -1341,17 +1344,25 @@ async function loadFormFile(file) {
     const sectionFile = zip.file('Contents/section0.xml');
     if (!sectionFile) throw new Error('유효한 HWPX 파일이 아닙니다 (section0.xml 없음)');
     const sectionXml = await sectionFile.async('string');
-    const textNodes = [];
-    const regex = /<hp:t>([\s\S]*?)<\/hp:t>/g;
-    let m, idx = 0;
-    while ((m = regex.exec(sectionXml)) !== null) {
-      const text = m[1].replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&apos;/g,"'");
-      textNodes.push({ idx, text }); idx++;
-    }
-    uploadedForm = { zip, sectionXml, fileName: file.name, textNodes };
+
+    // 문서 구조 분석: paragraph 스타일 패턴 추출
+    const analysis = analyzeDocStructure(sectionXml);
+
+    uploadedForm = { zip, sectionXml, fileName: file.name, analysis };
+    fillDoc = null;
+
     document.getElementById('formFileInfo').style.display = 'block';
     document.getElementById('formFileInfo').innerHTML =
-      `<div class="file-badge"><span class="dot"></span>📄 ${file.name} · 텍스트 노드 ${textNodes.length}개 감지<span class="remove" onclick="resetForm()">✕</span></div>`;
+      `<div class="file-badge"><span class="dot"></span>📄 ${file.name}<span class="remove" onclick="resetForm()">✕</span></div>`;
+
+    // 구조 요약 표시
+    const sum = document.getElementById('structureSummary');
+    sum.style.display = 'block';
+    sum.innerHTML = `<strong style="color:var(--clay)">감지된 문서 구조</strong><br>` +
+      `문단 ${analysis.totalParas}개 · 표 ${analysis.tableCount}개<br>` +
+      `스타일 패턴 ${analysis.styles.length}종 감지<br>` +
+      `<span style="font-size:11px;color:var(--ink-muted)">서식(header.xml)은 그대로 유지, 본문(section0.xml)만 새로 생성합니다</span>`;
+
     document.getElementById('formKeyCard').style.display = 'block';
     document.getElementById('formFieldCard').style.display = 'none';
     document.getElementById('formDownloadCard').style.display = 'none';
@@ -1359,189 +1370,301 @@ async function loadFormFile(file) {
 }
 
 function resetForm() {
-  uploadedForm = null; formFields = [];
+  uploadedForm = null; fillDoc = null;
   document.getElementById('formFile').value = '';
   document.getElementById('formFileInfo').style.display = 'none';
+  document.getElementById('structureSummary').style.display = 'none';
   document.getElementById('formKeyCard').style.display = 'none';
   document.getElementById('formFieldCard').style.display = 'none';
   document.getElementById('formDownloadCard').style.display = 'none';
 }
 
-// 노드 분류: label / blank / mixed / body / tab
-function classifyNode(text) {
-  if (!text) return 'blank';
-  // Contains embedded HWPX tags (tabs, line breaks, etc.)
-  if (/<hp:/.test(text)) return 'tab';
-  // Pure whitespace → blank fillable
-  if (/^\s+$/.test(text)) return 'blank';
-  // Count non-space chars and internal whitespace runs
-  const nonSpace = text.replace(/\s/g, '');
-  const hasLongGap = /\s{3,}/.test(text);  // 3+ consecutive spaces = likely blank insertion zone
-  const hasColon = /[:：]/.test(text);
-  const korLen = (text.match(/[가-힣]/g) || []).length;
-  // Mixed: has Korean label + long whitespace gaps (e.g. ": 금     원", "○ 용역명 : ")
-  if (hasLongGap && (korLen >= 1 || hasColon || /[()（）]/.test(text))) return 'mixed';
-  // Date pattern "20  년    월     일" → mixed
-  if (/20\s+년|\d+\s+년\s+\d*\s*월/.test(text)) return 'mixed';
-  // Label-like: has Korean chars, no long gap
-  if (korLen >= 1 || /^\d+\.$/.test(text) || /^[○□◦■▪]/.test(text)) return 'label';
-  // Otherwise body text
-  return 'body';
-}
+// ── 문서 구조 분석: section0.xml에서 스타일 패턴 추출 ──
+function analyzeDocStructure(xml) {
+  // 1) 모든 <hp:p> 요소의 paraPrIDRef, charPrIDRef, 텍스트 추출
+  const paraBlocks = [];
+  // 단순 regex로 p 단위 추출 (nested p 주의: table 내부 p도 잡힘)
+  const pRegex = /<hp:p\s([^>]*?)>([\s\S]*?)<\/hp:p>/g;
+  let pm;
+  while ((pm = pRegex.exec(xml)) !== null) {
+    const attrs = pm[1];
+    const body = pm[2];
+    const pp = (attrs.match(/paraPrIDRef="(\d+)"/) || [])[1] || '0';
+    const sid = (attrs.match(/styleIDRef="(\d+)"/) || [])[1] || '0';
+    // charPrIDRef from first run
+    const cp = (body.match(/charPrIDRef="(\d+)"/) || [])[1] || '0';
+    // 텍스트 추출
+    const texts = [];
+    const tReg = /<hp:t[^>]*>([\s\S]*?)<\/hp:t>/g;
+    let tm;
+    while ((tm = tReg.exec(body)) !== null) texts.push(tm[1].replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&'));
+    const text = texts.join('').trim();
+    const hasTable = /<hp:tbl\s/.test(body);
+    paraBlocks.push({ pp, cp, sid, text, hasTable, len: text.length });
+  }
 
-async function fillFormWithAI() {
-  if (!uploadedForm) { alert('먼저 HWPX 양식을 업로드하세요'); return; }
-  const keywords = document.getElementById('formKeywords').value.trim();
-  if (!keywords) { alert('핵심 내용을 입력하세요'); return; }
-  const fillBtn = document.getElementById('fillBtn');
-  fillBtn.disabled = true; fillBtn.textContent = 'AI 분석 중...';
-
-  // Categorize all nodes & build fillable candidate list with context
-  const nodes = uploadedForm.textNodes;
-  const classified = nodes.map(n => ({ ...n, kind: classifyNode(n.text) }));
-
-  // Build candidate list: only blank + mixed nodes, with nearby label context
-  const candidates = [];
-  classified.forEach((n, i) => {
-    if (n.kind !== 'blank' && n.kind !== 'mixed') return;
-    // Find nearest preceding label within 3 nodes
-    let labelContext = '';
-    for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
-      if (classified[j].kind === 'label' || classified[j].kind === 'mixed') {
-        labelContext = classified[j].text.trim() + (labelContext ? ' / ' + labelContext : '');
-        if (classified[j].kind === 'label' && /[가-힣]/.test(classified[j].text)) break;
-      }
-    }
-    candidates.push({ idx: n.idx, kind: n.kind, text: n.text, context: labelContext });
+  // 2) 스타일 패턴별 그룹핑
+  const styleGroups = {};
+  paraBlocks.forEach(p => {
+    const key = `pp${p.pp}_cp${p.cp}`;
+    if (!styleGroups[key]) styleGroups[key] = { pp: p.pp, cp: p.cp, samples: [], count: 0, totalLen: 0, hasTable: false };
+    styleGroups[key].count++;
+    styleGroups[key].totalLen += p.len;
+    if (p.text && styleGroups[key].samples.length < 3) styleGroups[key].samples.push(p.text.substring(0, 80));
+    if (p.hasTable) styleGroups[key].hasTable = true;
   });
 
-  // Limit to first 150 candidates for prompt size
-  const limited = candidates.slice(0, 150);
-  const candidateListText = limited.map(c =>
-    `[${c.idx}] kind=${c.kind} ctx="${c.context || '?'}" raw=${JSON.stringify(c.text)}`
-  ).join('\n');
+  const styles = Object.values(styleGroups).sort((a, b) => b.count - a.count);
 
-  const systemPrompt = `당신은 한국 공공기관 HWPX 양식의 빈 필드를 채우는 AI입니다.
+  // 3) 표 개수
+  const tableCount = (xml.match(/<hp:tbl\s/g) || []).length;
 
-아래는 양식에서 채울 수 있는 노드들입니다. 각 노드는 kind(blank/mixed), ctx(앞쪽 레이블 맥락), raw(원본 텍스트)로 구성됩니다.
+  // 4) 대표적인 본문 텍스트 추출 (AI에 구조 알려주기용)
+  const contentPreview = paraBlocks
+    .filter(p => p.text.length > 5 && !p.hasTable)
+    .slice(0, 30)
+    .map(p => `[pp=${p.pp},cp=${p.cp}] ${p.text.substring(0, 100)}`);
 
-당신의 임무: 각 노드에 들어갈 값을 생성하고, JSON으로 반환하세요.
+  return { totalParas: paraBlocks.length, tableCount, styles, contentPreview, paraBlocks };
+}
+
+// ── AI 구조화: 업로드된 양식 분석 + 사용자 내용 → 새 JSON ──
+async function restructureWithAI() {
+  if (!uploadedForm) { alert('먼저 HWPX 파일을 업로드하세요'); return; }
+  const keywords = document.getElementById('formKeywords').value.trim();
+  if (!keywords) { alert('새로 넣을 내용을 입력하세요'); return; }
+
+  const btn = document.getElementById('fillBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>구조 분석 중…';
+
+  const chatArea = document.getElementById('fillChatArea');
+  chatArea.style.display = 'block';
+  chatArea.innerHTML = '';
+  const loadingMsg = document.createElement('div');
+  loadingMsg.className = 'chat-msg chat-system';
+  loadingMsg.textContent = '양식 분석 + 구조화 중...';
+  chatArea.appendChild(loadingMsg);
+
+  const analysis = uploadedForm.analysis;
+  const docPreview = analysis.contentPreview.join('\n');
+
+  const systemPrompt = `당신은 한국 공공기관 문서 구조를 분석하고, 같은 구조로 새 문서를 생성하는 AI입니다.
+
+사용자가 기존 HWPX 문서의 구조 정보와 새 내용을 제공합니다.
+당신의 임무: 기존 문서의 구조 패턴을 파악하고, 새 내용을 같은 구조로 구조화하여 JSON으로 반환하세요.
 
 반드시 순수 JSON만 출력 (설명·마크다운 없이):
-{"fills":[{"idx":숫자,"label":"필드명","value":"대체할 전체 텍스트"}]}
+{"title":"문서 제목","doc_type":"서면보고","dept":"부서명","author":"작성자","date":"날짜",
+ "sections":[{"heading":"대제목","subsections":[{"heading":"중제목","paragraphs":["본문"]}],"conclusions":[],"notes":[]}],
+ "contacts":[{"dept":"","name":"","tel":""}],
+ "attachments":[]}
 
-===핵심 규칙===
+===규칙===
+1) 기존 문서의 구조를 최대한 벤치마킹하세요:
+   - 대제목 개수, 중제목 패턴, 본문 스타일을 파악해서 비슷한 뼈대로 만드세요
+   - 기존 문서가 표를 많이 쓰면 table도 포함 (subsection 안에 "table":{"rows":[["셀","셀"]]} 가능)
+2) heading/paragraphs/conclusions/notes에 불릿 기호(○ □ ⇒ - ※ Ⅰ Ⅱ) 넣지 마세요 (시스템이 자동 추가)
+3) sections 최소 2개, paragraphs는 구체적 서술 문장
+4) 사용자 제공 수치·고유명사는 절대 변경 금지
+5) 사용자가 충분한 내용을 주지 않은 부분은 그럴듯하게 보강하세요`;
 
-1) kind="blank" 인 노드 (예: raw="        "):
-   - 값을 생성해서 넣으세요 (공백은 무시되고 값만 들어감)
-   - value에 공백 앞뒤 padding 넣지 마세요, 그냥 값만
+  const userMessage = `[기존 문서 구조 — 이 패턴을 벤치마킹하세요]
+문단 ${analysis.totalParas}개, 표 ${analysis.tableCount}개
+스타일 패턴 ${analysis.styles.length}종
 
-2) kind="mixed" 인 노드 (예: raw=": 금             원(금         원)"):
-   - ★★★ 원본 구조를 반드시 보존 ★★★
-   - 레이블("금", "원", "(", ")", ":" 등)은 그대로 두고 공백 영역에만 값 삽입
-   - 올바른 예: raw=": 금             원(금         원)" → value=": 금    120,000,000    원(금  일억이천만    원)"
-   - 잘못된 예: value="120,000,000원" (구조 파괴 ❌)
-   - 올바른 예: raw="20  년    월     일" → value="2026년  4월  15일"
-   - 콜론만 있는 raw=": "는 그 뒤에 값 추가: value=": 한국정보기술"
+본문 미리보기 (스타일별 샘플):
+${docPreview}
 
-3) 중복 필드 자동 복제:
-   - 같은 ctx(예: "상 호", "대표자")가 여러 번 나오면 반드시 같은 value 사용
-   - 착수계/보안각서/공정표 등 여러 서류에 같은 회사 정보가 반복될 때 일관성 유지
+[사용자가 새로 넣을 내용]
+${keywords}
 
-4) 빈약한 정보 자동 보완:
-   - 사용자가 제공하지 않은 정보는 그럴듯한 한국 공공기관 문서 샘플값으로 채우세요
-   - 예: 사용자가 "상호만" 줬으면 주소·대표자·전화·감독관 등은 그럴듯한 가상값
-   - 날짜가 없으면 2026년 최근 날짜 추정
-   - 금액이 없으면 계약 규모에 맞는 1~5억 범위
-   - 단, 사용자가 명시한 값은 절대 변경 금지
-
-5) 모든 candidates 노드에 대해 value를 반환하세요 (빈 값 금지)`;
-
-  const userMessage = `[채울 수 있는 노드 목록]\n${candidateListText}\n\n[사용자 핵심 내용]\n${keywords}\n\n위 규칙대로 각 노드의 value를 생성해주세요. mixed 노드는 반드시 원본 구조 보존, 중복 ctx는 같은 값, 빈약한 정보는 그럴듯한 샘플로 채우세요.`;
+위 기존 문서의 구조 패턴(대제목 수, 중제목 수, 본문 깊이, 표 사용 여부)을 벤치마킹하여 새 내용을 같은 뼈대로 구조화해주세요.`;
 
   try {
     const aiText = await callClaudeStreaming({
-      model: document.getElementById('model').value, max_tokens: 8000,
+      model: document.getElementById('model').value, max_tokens: 4096,
       system: systemPrompt, messages: [{ role: 'user', content: userMessage }],
-    }, (txt) => { fillBtn.textContent = `분석 중... (${txt.length}자)`; });
+    }, (txt) => { loadingMsg.textContent = `구조화 중... (${txt.length}자)`; });
+
+    loadingMsg.remove();
     let jsonStr = aiText;
     const jsonMatch = aiText.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) jsonStr = jsonMatch[1];
-    const result = JSON.parse(jsonStr.trim());
-    let fills = (result.fills || []).filter(f =>
-      typeof f.idx === 'number' && f.value !== undefined && f.value !== null);
+    const doc = stripBullets(JSON.parse(jsonStr.trim()));
+    doc._templateType = 'report'; // 업로드된 양식 기반
+    doc._useUploadedTemplate = true;
+    fillDoc = doc;
 
-    // Safety check: reject fills that target label/body/tab nodes
-    fills = fills.filter(f => {
-      const n = classified.find(x => x.idx === f.idx);
-      return n && (n.kind === 'blank' || n.kind === 'mixed');
+    // 프리뷰
+    let preview = `✅ "${doc.title}" 구조가 생성되었습니다.\n\n`;
+    const roman = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ'];
+    doc.sections.forEach((sec, si) => {
+      preview += `${roman[si] || (si+1)} ${sec.heading}\n`;
+      if (sec.subsections) sec.subsections.forEach(sub => {
+        preview += `    □ ${sub.heading}\n`;
+        if (sub.paragraphs) sub.paragraphs.forEach(p => {
+          const txt = p.length > 60 ? p.substring(0, 57) + '...' : p;
+          preview += `        ○ ${txt}\n`;
+        });
+      });
+      if (sec.conclusions) sec.conclusions.forEach(c => {
+        const txt = c.length > 60 ? c.substring(0, 57) + '...' : c;
+        preview += `    ⇒ ${txt}\n`;
+      });
+      preview += '\n';
     });
 
-    // Auto-propagate: if same ctx/label appears multiple times but AI filled only once
-    const byCtx = {};
-    fills.forEach(f => {
-      const cand = limited.find(c => c.idx === f.idx);
-      const key = (cand?.context || '').trim();
-      if (key && !byCtx[key]) byCtx[key] = f.value;
-    });
-    limited.forEach(c => {
-      const key = (c.context || '').trim();
-      if (!key) return;
-      const already = fills.find(f => f.idx === c.idx);
-      if (!already && byCtx[key]) {
-        fills.push({ idx: c.idx, label: key, value: byCtx[key] });
-      }
-    });
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'chat-msg chat-ai';
+    previewDiv.textContent = preview;
+    chatArea.appendChild(previewDiv);
 
-    formFields = fills.filter(f => String(f.value).length > 0);
-    renderFieldList();
+    document.getElementById('fillJsonArea').value = JSON.stringify(doc, null, 2);
     document.getElementById('formFieldCard').style.display = 'block';
+
+    const totalP = doc.sections.reduce((sum, s) => sum + (s.subsections || []).reduce((ss, sub) => ss + (sub.paragraphs || []).length, 0), 0);
+    document.getElementById('formDownloadTitle').textContent = doc.title;
+    document.getElementById('formDownloadMeta').textContent = `섹션 ${doc.sections.length}개 · 본문 ${totalP}개 문단 · 원본 서식 유지`;
     document.getElementById('formDownloadCard').style.display = 'flex';
-    document.getElementById('formDownloadTitle').textContent = uploadedForm.fileName.replace('.hwpx', '_채움.hwpx');
-    document.getElementById('formDownloadMeta').textContent = `${formFields.length}개 필드 자동 채움 완료 · mixed 구조 보존`;
-  } catch (e) { alert('AI 채우기 실패: ' + e.message); console.error(e); }
-  fillBtn.disabled = false; fillBtn.textContent = 'AI로 필드 자동 채우기';
+  } catch (e) {
+    loadingMsg.remove();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'chat-msg chat-system';
+    errDiv.textContent = '❌ 오류: ' + e.message;
+    chatArea.appendChild(errDiv);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '이 양식으로 새 문서 만들기';
 }
-
-function renderFieldList() {
-  const list = document.getElementById('fieldList');
-  list.innerHTML = '';
-  formFields.forEach((f, i) => {
-    const orig = uploadedForm.textNodes[f.idx]?.text || '';
-    const item = document.createElement('div');
-    item.className = 'field-item filled';
-    item.innerHTML = `<div class="label">${escapeHtml(f.label || '필드 ' + (i+1))}<div class="field-empty-label">원본: "${escapeHtml(orig.substring(0,30))}"</div></div><input type="text" value="${escapeHtml(f.value)}" oninput="updateFieldValue(${i}, this.value)">`;
-    list.appendChild(item);
-  });
-}
-
-function updateFieldValue(i, v) { if (formFields[i]) formFields[i].value = v; }
 
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escapeXml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
 
-async function downloadFilledForm() {
-  if (!uploadedForm || !formFields.length) return;
+// ── 다운로드: 업로드된 파일에서 section0.xml만 교체 ──
+async function downloadRestructured() {
+  if (!uploadedForm) return;
+
+  // JSON 편집 반영
   try {
-    const fillMap = {};
-    formFields.forEach(f => { fillMap[f.idx] = f.value; });
-    const parts = []; let lastEnd = 0, idx = 0;
-    const regex = /<hp:t>([\s\S]*?)<\/hp:t>/g;
-    const xml = uploadedForm.sectionXml;
-    let m;
-    while ((m = regex.exec(xml)) !== null) {
-      parts.push(xml.substring(lastEnd, m.index));
-      if (fillMap[idx] !== undefined) parts.push('<hp:t>' + escapeXml(fillMap[idx]) + '</hp:t>');
-      else parts.push(m[0]);
-      lastEnd = m.index + m[0].length; idx++;
+    const edited = JSON.parse(document.getElementById('fillJsonArea').value);
+    fillDoc = stripBullets(edited);
+  } catch (e) { alert('JSON 형식 오류: ' + e.message); return; }
+  if (!fillDoc) return;
+
+  fillDoc.date = fillDoc.date || HwpxGenerator.today();
+
+  try {
+    // 업로드된 zip에서 section0.xml만 교체
+    // 기존 base64 템플릿 대신 업로드된 파일의 header.xml 등을 그대로 사용
+    const zip = uploadedForm.zip;
+    const sectionXml = uploadedForm.sectionXml;
+
+    // section0.xml의 XML envelope 추출 (네임스페이스 선언 등)
+    // 기존 section0.xml을 파싱해서 빈 section에 새 내용을 빌드
+    const parser = new DOMParser();
+    const HP = 'http://www.hancom.co.kr/hwpml/2011/paragraph';
+
+    const sectionDoc = parser.parseFromString(sectionXml, 'text/xml');
+    const sec = sectionDoc.documentElement;
+
+    // 기존 내용 모두 제거 (첫 번째 p만 남기고)
+    const allPs = Array.from(sec.getElementsByTagNameNS(HP, 'p'));
+    for (let i = allPs.length - 1; i >= 1; i--) {
+      const p = allPs[i];
+      if (p.parentNode === sec) sec.removeChild(p);
     }
-    parts.push(xml.substring(lastEnd));
-    const newXml = parts.join('');
-    uploadedForm.zip.file('Contents/section0.xml', newXml);
-    const blob = await uploadedForm.zip.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip', compression: 'DEFLATE' });
-    const fname = uploadedForm.fileName.replace(/\.hwpx$/i, '') + '_채움.hwpx';
+    // 첫 번째 p의 텍스트도 비우기
+    const firstTNodes = allPs[0]?.getElementsByTagNameNS(HP, 't');
+    if (firstTNodes && firstTNodes.length > 0) {
+      firstTNodes[0].textContent = '';
+    }
+
+    // section 바깥의 table 요소들도 제거
+    const topTbls = Array.from(sec.childNodes).filter(n => n.localName === 'tbl' || (n.localName === 'p' && n.querySelector && /<hp:tbl/.test(n.outerHTML || '')));
+
+    // 기존 스타일 패턴에서 가장 많이 쓰인 pp/cp를 본문용으로 사용
+    const analysis = uploadedForm.analysis;
+    const bodyStyle = analysis.styles[0] || { pp: '0', cp: '0' };
+
+    function _addP(text, ppOverride, cpOverride) {
+      const p = sectionDoc.createElementNS(HP, 'hp:p');
+      p.setAttribute('id', String(Math.floor(Math.random() * 4294967295)));
+      p.setAttribute('paraPrIDRef', ppOverride || bodyStyle.pp);
+      p.setAttribute('styleIDRef', '0');
+      p.setAttribute('pageBreak', '0');
+      p.setAttribute('columnBreak', '0');
+      p.setAttribute('merged', '0');
+      const run = sectionDoc.createElementNS(HP, 'hp:run');
+      run.setAttribute('charPrIDRef', cpOverride || bodyStyle.cp);
+      const t = sectionDoc.createElementNS(HP, 'hp:t');
+      t.appendChild(sectionDoc.createTextNode(text));
+      run.appendChild(t);
+      p.appendChild(run);
+      sec.appendChild(p);
+    }
+
+    // 문서 빌드
+    const doc = fillDoc;
+    const dt = doc.doc_type || '서면보고';
+    const date = doc.date || '';
+    const dept = doc.dept || '';
+    const author = doc.author || '';
+    const meta = [dt, date, `${dept} ${author}`.trim()].filter(Boolean).join(' | ');
+    _addP(meta);
+    _addP('');
+    _addP(doc.title || '보고서');
+    _addP('');
+
+    const NUM_L1 = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ'];
+
+    (doc.sections || []).forEach((s, si) => {
+      const num = NUM_L1[Math.min(si, NUM_L1.length - 1)];
+      if (si > 0) _addP('');
+      _addP(`${num}  ${(s.heading || '').replace(/^[\s]*(Ⅰ|Ⅱ|Ⅲ|Ⅳ|Ⅴ|Ⅵ|Ⅶ|Ⅷ)[.\s]*/,'').trim()}`);
+
+      (s.subsections || []).forEach(sub => {
+        _addP(`□ ${(sub.heading || '').replace(/^[\s]*□\s*/,'').trim()}`);
+        (sub.paragraphs || []).forEach(p => {
+          _addP(`○ ${(p || '').replace(/^[\s]*○\s*/,'').trim()}`);
+        });
+        if (sub.table && sub.table.rows) {
+          sub.table.rows.forEach(row => {
+            _addP(row.join(' | '));
+          });
+        }
+      });
+
+      (s.paragraphs || []).forEach(p => {
+        _addP(`○ ${(p || '').replace(/^[\s]*○\s*/,'').trim()}`);
+      });
+
+      (s.notes || []).forEach(n => _addP(`※ ${(n || '').replace(/^[\s]*※\s*/,'').trim()}`));
+      (s.conclusions || []).forEach(c => _addP(`⇒ ${(c || '').replace(/^[\s]*⇒\s*/,'').trim()}`));
+    });
+
+    if (doc.contacts && doc.contacts.length > 0) {
+      _addP('');
+      _addP('담당 부서 | 담당자 | 연락처');
+      doc.contacts.forEach(c => _addP(`${c.dept || ''} | ${c.name || ''} | ${c.tel || ''}`));
+    }
+
+    (doc.attachments || []).forEach((att, i) => _addP(`붙임${i+1}  ${att}`));
+
+    const newXml = new XMLSerializer().serializeToString(sectionDoc);
+    zip.file('Contents/section0.xml', newXml);
+
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/hwp+zip', compression: 'DEFLATE' });
+    const fname = (doc.title || '새문서').replace(/[/\\?%*:|"<>]/g, '') + '.hwpx';
     HwpxGenerator.downloadBlob(blob, fname);
-  } catch (e) { alert('다운로드 실패: ' + e.message); }
+
+    const s = document.getElementById('status');
+    s.style.display = 'block'; s.style.color = 'var(--moss)';
+    s.textContent = '✅ 다운로드 완료: ' + fname;
+  } catch (e) {
+    alert('다운로드 실패: ' + e.message);
+    console.error(e);
+  }
 }
 
 initSliders(); updatePreview(); renderExampleChips();
